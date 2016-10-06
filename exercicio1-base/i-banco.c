@@ -89,7 +89,7 @@ int main (int argc, char** argv) {
 			if (numargs < 2) {
 				printf("%s: Sintaxe inválida, tente de novo.\n", COMANDO_LER_SALDO);
 				continue;
-		}
+			}
 		
 			idConta = atoi(args[1]);
 			saldo = lerSaldo (idConta);
@@ -100,13 +100,46 @@ int main (int argc, char** argv) {
 				printf("%s(%d): O saldo da conta é %d.\n\n", COMANDO_LER_SALDO, idConta, saldo);
 		}
 
+		
+
+
+
+		/* WORKING ON IT */
+
+
+
 		/* Simular */
 		else if (strcmp(args[0], COMANDO_SIMULAR) == 0) {
 			
+			if (numargs != 2) {
+				printf("%s: Sintaxe inválida, tente de novo.\n", COMANDO_SIMULAR);
+				continue;
+			}
+			
+			/* use fork to run simular in child process
+			 * keep track of all the PID (vector?) so it's possible
+			 * to wait for them on our next step which is exit */
+
 			simular(atoi(args[1]));
 
 			printf("We hope it works\n");
 		}
+
+		
+		/* Sair */
+		else if (strcmp(args[0], COMANDO_SAIR) == 0) {
+			if (numargs > 2 || numargs < 1) {
+				printf("%s: Sintaxe inválida, tente de novo.\n", COMANDO_SAIR);
+				continue;
+			}
+
+			/* implementar o "sair agora" */
+		}
+
+
+
+
+
 
 		else {
 			printf("Comando desconhecido. Tente de novo.\n");
