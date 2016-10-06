@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 #define COMANDO_DEBITAR "debitar"
 #define COMANDO_CREDITAR "creditar"
@@ -24,6 +25,8 @@ int main (int argc, char** argv) {
 	char *args[MAXARGS + 1];
 	char buffer[BUFFER_SIZE];
 
+	int process_counter = 0; 
+
 	inicializarContas();
 
 	printf("Bem-vinda/o ao i-banco\n\n");
@@ -37,17 +40,36 @@ int main (int argc, char** argv) {
 		if (numargs < 0 ||
 			(numargs > 0 && (strcmp(args[0], COMANDO_SAIR) == 0))) {
 			
-			/* POR COMPLETAR */
+			int i;
+			int status;
+			int pid;
 
-			printf("Comando nao implementado\n");            
+			if (numargs > 2 || numargs < 1) {
+				printf("%s: Sintaxe inválida, tente de novo.\n", COMANDO_SAIR);
+				continue;
+			}
+
+			printf("O i-banco sucks, %d\n", process_counter);
+
+			for (i = 0; i < process_counter; i++){
+				pid = wait (&status);
+				
+				if (WIFEXITED(status))
+					printf("FILHO TERMINADO (PID=%d; terminou normalmente)\n", pid);
+
+				else 
+					printf("FILHO TERMINADO (PID=%d; terminou abruptamente)\n", pid);
+			}          
 			
 			exit(EXIT_SUCCESS);
 		}
 	
+
 		else if (numargs == 0)
 			/* Nenhum argumento; ignora e volta a pedir */
 			continue;
-			
+	
+
 		/* Debitar */
 		else if (strcmp(args[0], COMANDO_DEBITAR) == 0) {
 			int idConta, valor;
@@ -116,11 +138,21 @@ int main (int argc, char** argv) {
 				continue;
 			}
 			
+			int pid = fork();
+
+			process_counter++;
+
+			if (pid == 0){
+				simular(atoi(args[1]));
+				exit(1);
+
+			}
+
 			/* use fork to run simular in child process
 			 * keep track of all the PID (vector?) so it's possible
 			 * to wait for them on our next step which is exit */
 
-			simular(atoi(args[1]));
+
 
 			printf("We hope it works\n");
 		}
@@ -128,13 +160,13 @@ int main (int argc, char** argv) {
 		
 		/* Sair */
 		else if (strcmp(args[0], COMANDO_SAIR) == 0) {
-			if (numargs > 2 || numargs < 1) {
-				printf("%s: Sintaxe inválida, tente de novo.\n", COMANDO_SAIR);
-				continue;
+
+
 			}
 
 			/* implementar o "sair agora" */
-		}
+
+
 
 
 
