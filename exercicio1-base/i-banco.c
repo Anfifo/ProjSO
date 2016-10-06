@@ -36,6 +36,9 @@ int main (int argc, char** argv) {
 	
 		numargs = readLineArguments(args, MAXARGS+1, buffer, BUFFER_SIZE);
 
+
+		/*WORKING */
+
 		/* EOF (end of file) do stdin ou comando "sair" */
 		if (numargs < 0 ||
 			(numargs > 0 && (strcmp(args[0], COMANDO_SAIR) == 0))) {
@@ -64,6 +67,11 @@ int main (int argc, char** argv) {
 			exit(EXIT_SUCCESS);
 		}
 	
+
+
+
+
+
 
 		else if (numargs == 0)
 			/* Nenhum argumento; ignora e volta a pedir */
@@ -152,25 +160,7 @@ int main (int argc, char** argv) {
 			 * keep track of all the PID (vector?) so it's possible
 			 * to wait for them on our next step which is exit */
 
-
-
-			printf("We hope it works\n");
 		}
-
-		
-		/* Sair */
-		else if (strcmp(args[0], COMANDO_SAIR) == 0) {
-
-
-			}
-
-			/* implementar o "sair agora" */
-
-
-
-
-
-
 
 
 		else {
