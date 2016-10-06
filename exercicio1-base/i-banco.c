@@ -63,54 +63,53 @@ int main (int argc, char** argv) {
 	           printf("%s(%d, %d): Erro\n\n", COMANDO_DEBITAR, idConta, valor);
             else
                 printf("%s(%d, %d): OK\n\n", COMANDO_DEBITAR, idConta, valor);
-    }
-
-    /* Creditar */
-    else if (strcmp(args[0], COMANDO_CREDITAR) == 0) {
-        int idConta, valor;
-        if (numargs < 3) {
-            printf("%s: Sintaxe inválida, tente de novo.\n", COMANDO_CREDITAR);
-            continue;
         }
 
-        idConta = atoi(args[1]);
-        valor = atoi(args[2]);
+        /* Creditar */
+        else if (strcmp(args[0], COMANDO_CREDITAR) == 0) {
+            int idConta, valor;
+            if (numargs < 3) {
+                printf("%s: Sintaxe inválida, tente de novo.\n", COMANDO_CREDITAR);
+                continue;
+            }
 
-        if (creditar (idConta, valor) < 0)
-            printf("%s(%d, %d): Erro\n\n", COMANDO_CREDITAR, idConta, valor);
-        else
-            printf("%s(%d, %d): OK\n\n", COMANDO_CREDITAR, idConta, valor);
-    }
+            idConta = atoi(args[1]);
+            valor = atoi(args[2]);
 
-    /* Ler Saldo */
-    else if (strcmp(args[0], COMANDO_LER_SALDO) == 0) {
-        int idConta, saldo;
-
-        if (numargs < 2) {
-            printf("%s: Sintaxe inválida, tente de novo.\n", COMANDO_LER_SALDO);
-            continue;
+            if (creditar (idConta, valor) < 0)
+                printf("%s(%d, %d): Erro\n\n", COMANDO_CREDITAR, idConta, valor);
+            else
+                printf("%s(%d, %d): OK\n\n", COMANDO_CREDITAR, idConta, valor);
         }
-        idConta = atoi(args[1]);
-        saldo = lerSaldo (idConta);
-        if (saldo < 0)
-            printf("%s(%d): Erro.\n\n", COMANDO_LER_SALDO, idConta);
-        else
-            printf("%s(%d): O saldo da conta é %d.\n\n", COMANDO_LER_SALDO, idConta, saldo);
-    }
 
-    /* Simular */
-    else if (strcmp(args[0], COMANDO_SIMULAR) == 0) {
+        /* Ler Saldo */
+        else if (strcmp(args[0], COMANDO_LER_SALDO) == 0) {
+            int idConta, saldo;
 
-      /* POR COMPLETAR */
+            if (numargs < 2) {
+                printf("%s: Sintaxe inválida, tente de novo.\n", COMANDO_LER_SALDO);
+                continue;
+        }
+        
+            idConta = atoi(args[1]);
+            saldo = lerSaldo (idConta);
+        
+            if (saldo < 0)
+                printf("%s(%d): Erro.\n\n", COMANDO_LER_SALDO, idConta);
+            else
+                printf("%s(%d): O saldo da conta é %d.\n\n", COMANDO_LER_SALDO, idConta, saldo);
+        }
 
-      printf("Comando nao implementado\n");
-      
-    }
+        /* Simular */
+        else if (strcmp(args[0], COMANDO_SIMULAR) == 0) {
+            
+            simular(atoi(args[1]));
 
-    else {
-      printf("Comando desconhecido. Tente de novo.\n");
-    }
+            printf("We hope it works\n");
+        }
 
-  } 
+        else {
+            printf("Comando desconhecido. Tente de novo.\n");
+        }
+    } 
 }
-
