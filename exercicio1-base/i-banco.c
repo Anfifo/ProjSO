@@ -75,17 +75,16 @@ int main (int argc, char** argv) {
 
 			
 
-			if (numargs == 1){
-				for (i = 0; i < process_counter; i++){
-					pid = wait (&status);
-					
-					if (WIFEXITED(status))
-						printf("FILHO TERMINADO (PID=%d; terminou normalmente)\n", pid);
+			for (i = 0; i < process_counter; i++){
+				pid = wait (&status);
+				
+				if (WIFEXITED(status))
+					printf("FILHO TERMINADO (PID=%d; terminou normalmente)\n", pid);
 
-					else 
-						printf("FILHO TERMINADO (PID=%d; terminou abruptamente)\n", pid);
-				}
+				else 
+					printf("FILHO TERMINADO (PID=%d; terminou abruptamente)\n", pid);
 			}
+		
 			
 			printf("--\n");
 			printf("O i-banco terminou\n");
