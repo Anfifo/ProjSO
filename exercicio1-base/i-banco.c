@@ -12,15 +12,18 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <signal.h>
 
 #define COMANDO_DEBITAR "debitar"
 #define COMANDO_CREDITAR "creditar"
 #define COMANDO_LER_SALDO "lerSaldo"
 #define COMANDO_SIMULAR "simular"
 #define COMANDO_SAIR "sair"
+#define COMANDO_SAIR_AGORA "agora"
 
 #define MAXARGS 3
 #define BUFFER_SIZE 100
+#define MAX_PROCESSES 20
 
 
 int main (int argc, char** argv) {
@@ -29,6 +32,7 @@ int main (int argc, char** argv) {
 	char buffer[BUFFER_SIZE];
 
 	int process_counter = 0; 
+	int pid_vector[MAX_PROCESSES];
 
 	inicializarContas();
 
@@ -61,7 +65,16 @@ int main (int argc, char** argv) {
 				continue;
 			}
 
-			printf("O i-banco sucks, %d\n", process_counter);
+			printf("O i-banco vai terminar\n");
+
+			if (numargs == 2 || strcmp(args[1], COMANDO_SAIR_AGORA)){
+
+
+				for(i = 0; i < process_counter; i++)
+					kill(pid_vector[i], SIGUSR1);
+			} 
+
+			
 
 			for (i = 0; i < process_counter; i++){
 				pid = wait (&status);
@@ -74,6 +87,8 @@ int main (int argc, char** argv) {
 			}          
 			
 			exit(EXIT_SUCCESS);
+
+			
 		}
 	
 
@@ -171,7 +186,11 @@ int main (int argc, char** argv) {
 			
 			int pid = fork();
 
+			pid_vector[process_counter] = pid;
 			process_counter++;
+
+
+
 
 			if (pid == 0){
 				simular(atoi(args[1]));
