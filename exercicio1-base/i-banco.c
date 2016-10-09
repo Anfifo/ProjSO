@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/wait.h>
 
 #define COMANDO_DEBITAR "debitar"
 #define COMANDO_CREDITAR "creditar"
@@ -39,9 +40,15 @@ int main (int argc, char** argv) {
 
 		/*WORKING */
 
-		/* EOF (end of file) do stdin ou comando "sair" */
-		if (numargs < 0 ||
-			(numargs > 0 && (strcmp(args[0], COMANDO_SAIR) == 0))) {
+		/* 
+		 * EOF (end of file) do stdin ou comando SAIR
+		 * arg1(optional) char* "agora"
+		 * in case of 1 argument forces quick end to all processes
+		 * else it will wait for everything to be done before exiting
+		 */
+		if ( numargs < 0 ||
+			(numargs > 0 && 
+			(strcmp(args[0], COMANDO_SAIR) == 0) )){
 			
 			int i;
 			int status;
@@ -69,16 +76,17 @@ int main (int argc, char** argv) {
 	
 
 
-
-
-
-
 		else if (numargs == 0)
 			/* Nenhum argumento; ignora e volta a pedir */
 			continue;
 	
 
-		/* Debitar */
+		/* 
+		 * Debitar 
+		 * arg 1 int - idConta
+		 * arg 2 int - valor
+		 * debita ao idConta o valor  
+		 */
 		else if (strcmp(args[0], COMANDO_DEBITAR) == 0) {
 			int idConta, valor;
 			if (numargs < 3) {
@@ -95,7 +103,12 @@ int main (int argc, char** argv) {
 				printf("%s(%d, %d): OK\n\n", COMANDO_DEBITAR, idConta, valor);
 		}
 
-		/* Creditar */
+		/*
+		 * Creditar 
+		 * arg 1 int - idConta
+		 * arg 2 int - valor
+		 * credita ao idConta o valor
+		 */
 		else if (strcmp(args[0], COMANDO_CREDITAR) == 0) {
 			int idConta, valor;
 			if (numargs < 3) {
@@ -112,7 +125,12 @@ int main (int argc, char** argv) {
 				printf("%s(%d, %d): OK\n\n", COMANDO_CREDITAR, idConta, valor);
 		}
 
-		/* Ler Saldo */
+
+		/*
+		 * Ler Saldo
+		 * arg 1 int - idConta
+		 * le o saldo da conta idConta 
+		 */
 		else if (strcmp(args[0], COMANDO_LER_SALDO) == 0) {
 			int idConta, saldo;
 
@@ -138,7 +156,10 @@ int main (int argc, char** argv) {
 
 
 
-		/* Simular */
+		/* Simular 
+		 * arg 1 int - nr_de_anos
+		 * faz a simulacao dos nr_de_anos sob as contas existentes
+		 */
 		else if (strcmp(args[0], COMANDO_SIMULAR) == 0) {
 			
 			if (numargs != 2) {
@@ -152,7 +173,7 @@ int main (int argc, char** argv) {
 
 			if (pid == 0){
 				simular(atoi(args[1]));
-				exit(1);
+				exit(EXIT_SUCCESS);
 
 			}
 

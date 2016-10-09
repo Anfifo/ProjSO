@@ -58,8 +58,10 @@ void simular(int numAnos) {
 		for (idConta = 1; idConta <= NUM_CONTAS; idConta++){
 			novo_saldo = (int) ((float) lerSaldo(idConta) * (1 + TAXAJURO) - (float)CUSTOMANUTENCAO);
 			
-			if (novo_saldo >= 0)
-				printf("Conta %d, Saldo %d\n", idConta, novo_saldo);
+			if (novo_saldo < 0)
+				novo_saldo = 0;
+
+			printf("Conta %d, Saldo %d\n", idConta, novo_saldo);
 		
 		}
 		printf("\n");
