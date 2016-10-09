@@ -65,5 +65,18 @@ void simular(int numAnos) {
 		
 		}
 		printf("\n");
+
+		signal(SIGUSR, apanhaSinalSIGUSR1);
 	}
 }
+
+void apanhaSinalSIGUSR1(){
+
+	exit(EXIT_FAILURE);
+}
+
+
+
+
+
+
