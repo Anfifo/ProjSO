@@ -67,7 +67,7 @@ int main (int argc, char** argv) {
 
 			printf("O i-banco vai terminar\n");
 
-			if (numargs == 2 || strcmp(args[1], COMANDO_SAIR_AGORA)){
+			if (numargs == 2 && strcmp(args[1], COMANDO_SAIR_AGORA)){
 
 
 				for(i = 0; i < process_counter; i++)
@@ -186,9 +186,6 @@ int main (int argc, char** argv) {
 			
 			int pid = fork();
 
-			pid_vector[process_counter] = pid;
-			process_counter++;
-
 
 
 
@@ -197,6 +194,9 @@ int main (int argc, char** argv) {
 				exit(EXIT_SUCCESS);
 
 			}
+
+			pid_vector[process_counter] = pid;
+			process_counter++;
 
 			/* use fork to run simular in child process
 			 * keep track of all the PID (vector?) so it's possible
