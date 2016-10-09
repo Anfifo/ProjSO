@@ -68,9 +68,7 @@ int main (int argc, char** argv) {
 			printf("O i-banco vai terminar\n");
 			printf("--\n");
 
-			if (numargs == 2 && strcmp(args[1], COMANDO_SAIR_AGORA)){
-
-
+			if (numargs == 2 && (strcmp(args[1], COMANDO_SAIR_AGORA) == 0) ){
 				for(i = 0; i < process_counter; i++)
 					kill(pid_vector[i], SIGUSR1);
 			} 
