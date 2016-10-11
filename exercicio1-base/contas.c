@@ -71,6 +71,8 @@ void simular(int numAnos) {
 		}
 		printf("\n");
 		
+		/* if parent process send signal for
+		 * quick exit, flag will be 1 */ 
 		if (flag){
 			printf("terminado por sinal\n");
 			exit(EXIT_SUCCESS);
@@ -78,10 +80,7 @@ void simular(int numAnos) {
 	}
 }
 
-void apanhaSinalSIGUSR1(){
-	signal(SIGUSR1, apanhaSinalSIGUSR1);
-	flag = 1;
-}
+
 
 
 

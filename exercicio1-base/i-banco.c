@@ -13,6 +13,7 @@
 #include <sys/wait.h>
 #include <signal.h>
 
+/* commands */
 #define COMANDO_DEBITAR "debitar"
 #define COMANDO_CREDITAR "creditar"
 #define COMANDO_LER_SALDO "lerSaldo"
@@ -23,6 +24,11 @@
 #define MAXARGS 3
 #define BUFFER_SIZE 100
 #define MAX_PROCESSES 20
+
+/* function that processes signal SIGUSR1 from parent process */
+void apanhaSinalSIGUSR1();
+/* flag changed by signal SIGUSR1 used in child process */
+extern int flag;
 
 
 int main (int argc, char** argv) {
@@ -47,7 +53,7 @@ int main (int argc, char** argv) {
 		/* 
 		 * EOF (end of file) do stdin ou comando SAIR
 		 * arg1(optional) char* "agora"
-		 * in case of 1 argument forces quick end to all processes
+		 * in case of argument 1 "agora" calls for a quick end to all processes
 		 * else it will wait for everything to be done before exiting
 		 */
 		if ( numargs < 0 ||
@@ -172,18 +178,17 @@ int main (int argc, char** argv) {
 		 */
 		else if (strcmp(args[0], COMANDO_SIMULAR) == 0) {
 			
-			if (numargs != 2 || args[1] < 0) {
+			if (numargs != 2 || atoi(args[1]) < 0) {
 				printf("%s: Sintaxe inválida, tente de novo.\n", COMANDO_SIMULAR);
 				continue;
 			}
 			
 			int pid = fork();
 
-
+			/* code for child process */
 			if (pid == 0){
 				simular(atoi(args[1]));
 				exit(EXIT_SUCCESS);
-
 			}
 
 			pid_vector[process_counter] = pid;
@@ -195,4 +200,9 @@ int main (int argc, char** argv) {
 			printf("Comando desconhecido. Tente de novo.\n");
 		}
 	} 
+}
+
+void apanhaSinalSIGUSR1(){
+	signal(SIGUSR1, apanhaSinalSIGUSR1);
+	flag = 1;
 }
