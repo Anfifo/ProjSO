@@ -1,4 +1,3 @@
-/*hey i just met u and this is crazy so im gonna test git bye*/
 
 /*
 // Projeto SO - exercicio 1, version 1
@@ -35,6 +34,7 @@ int main (int argc, char** argv) {
 	int pid_vector[MAX_PROCESSES];
 
 	inicializarContas();
+	signal(SIGUSR1, apanhaSinalSIGUSR1);
 
 	printf("Bem-vinda/o ao i-banco\n\n");
 	  
@@ -43,8 +43,6 @@ int main (int argc, char** argv) {
 	
 		numargs = readLineArguments(args, MAXARGS+1, buffer, BUFFER_SIZE);
 
-
-		/*WORKING */
 
 		/* 
 		 * EOF (end of file) do stdin ou comando SAIR
@@ -68,7 +66,7 @@ int main (int argc, char** argv) {
 			printf("O i-banco vai terminar\n");
 			printf("--\n");
 
-			if (numargs == 2 && (strcmp(args[1], COMANDO_SAIR_AGORA) == 0) ){
+			if (numargs == 2 && (strcmp(args[1], COMANDO_SAIR_AGORA) == 0) ){	
 				for(i = 0; i < process_counter; i++)
 					kill(pid_vector[i], SIGUSR1);
 			} 
@@ -168,25 +166,18 @@ int main (int argc, char** argv) {
 		
 
 
-
-		/* WORKING ON IT */
-
-
-
 		/* Simular 
 		 * arg 1 int - nr_de_anos
 		 * faz a simulacao dos nr_de_anos sob as contas existentes
 		 */
 		else if (strcmp(args[0], COMANDO_SIMULAR) == 0) {
 			
-			if (numargs != 2) {
+			if (numargs != 2 || args[1] < 0) {
 				printf("%s: Sintaxe inválida, tente de novo.\n", COMANDO_SIMULAR);
 				continue;
 			}
 			
 			int pid = fork();
-
-
 
 
 			if (pid == 0){
@@ -197,11 +188,6 @@ int main (int argc, char** argv) {
 
 			pid_vector[process_counter] = pid;
 			process_counter++;
-
-			/* use fork to run simular in child process
-			 * keep track of all the PID (vector?) so it's possible
-			 * to wait for them on our next step which is exit */
-
 		}
 
 

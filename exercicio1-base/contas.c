@@ -11,8 +11,6 @@ int contasSaldos[NUM_CONTAS];
 int flag;
 
 
-void apanhaSinalSIGUSR1();
-
 int contaExiste(int idConta) {
 	return (idConta > 0 && idConta <= NUM_CONTAS);
 }
@@ -57,7 +55,6 @@ void simular(int numAnos) {
 	int idConta;
 	flag = 0;
 
-	signal(SIGUSR1, apanhaSinalSIGUSR1);
 
 	for (ano = 0; ano <= numAnos; ano++){
 		printf("SIMULACAO: Ano: %d \n", ano);
@@ -76,7 +73,7 @@ void simular(int numAnos) {
 		
 		if (flag){
 			printf("terminado por sinal\n");
-			kill(getpid(),SIGKILL);
+			exit(EXIT_SUCCESS);
 		}
 	}
 }
