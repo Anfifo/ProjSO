@@ -25,6 +25,13 @@ int contaExiste(int idConta);
 int debitar(int idConta, int valor);
 int creditar(int idConta, int valor);
 int lerSaldo(int idConta);
+
+/* 
+ * WARNING (simular):
+ * This function expects to be called on a child process
+ * it directly access the vector contasSaldos and changes it
+ * calling this function on parents process will make changes to the vector
+ */
 void simular(int numAnos);
 
 

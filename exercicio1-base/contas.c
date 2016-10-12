@@ -49,29 +49,44 @@ int lerSaldo(int idConta) {
 
 
 
+/* 
+ * WARNING:
+ * This function expects to be called on a child process
+ * it directly access the vector contasSaldos and changes it
+ * calling this function on parents process will make changes to the vector
+ *
+ * since we're using child processes to deal with this function it makes no sense
+ * to create an auxiliar vector on this function
+ */
 void simular(int numAnos) {
 
-	int novo_saldo;
 	int ano;
 	int idConta;
 	flag = 0;
 
+
 	if (numAnos < 0)
 		return;
+
 
 	for (ano = 0; ano <= numAnos; ano++){
 		printf("SIMULACAO: Ano: %d \n", ano);
 		printf("=============\n");
 		
 		for (idConta = 1; idConta <= NUM_CONTAS; idConta++){
-			novo_saldo = (int) ((float) lerSaldo(idConta) * (1 + TAXAJURO) - (float)CUSTOMANUTENCAO);
 			
-			if (novo_saldo < 0)
-				novo_saldo = 0;
+			if (!contaExiste(idConta))
+				continue;
 
-			printf("Conta %d, Saldo %d\n", idConta, novo_saldo);
-		
+			if (ano > 0)
+				contasSaldos[idConta-1] = (int) ((float) lerSaldo(idConta) * (1 + TAXAJURO) - (float)CUSTOMANUTENCAO);
+
+			if (contasSaldos[idConta-1] < 0)
+				contasSaldos[idConta-1] = 0;
+
+			printf("Conta %d, Saldo %d\n", idConta, contasSaldos[idConta-1]);
 		}
+
 		printf("\n");
 		
 		/* se um sinal tornar a flag a 1 o processo 
