@@ -1,4 +1,12 @@
 /*
+ * * * * * * * * * * * * *
+ * Grupo: 4
+ * Andre' Fonseca 84698
+ * Isabel Dias 84726
+ *
+ * added:
+ * 		simular
+ * * * * * * * * * * * * *
 // Operações sobre contas, versao 1
 // Sistemas Operativos, DEI/IST/ULisboa 2016-17
 */

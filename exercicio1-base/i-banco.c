@@ -1,5 +1,15 @@
-
-/*
+/* 
+ * * * * * * * * * * * * *
+ * Grupo: 4
+ * Andre' Fonseca 84698
+ * Isabel Dias 84726
+ * 
+ * added:
+ * 		Comandos: "sair", "sair agora" and " simular"
+ * 		funcao: apanhaSignalSIGUSR1()
+ * 		Multi Processos para exercutar o Simular
+ * 		Comentarios
+ * * * * * * * * * * * * *
 // Projeto SO - exercicio 1, version 1
 // Sistemas Operativos, DEI/IST/ULisboa 2016-17
 */
@@ -23,10 +33,11 @@
 
 #define MAXARGS 3
 #define BUFFER_SIZE 100
-#define MAX_PROCESSES 20
+#define NR_MAX_PROCESSOS 20
 
-/* function that processes signal SIGUSR1 from parent process */
+/* function that processes signal SIGUSR1 */
 void apanhaSinalSIGUSR1();
+
 /* flag changed by signal SIGUSR1 used in child process */
 extern int flag;
 
@@ -37,7 +48,7 @@ int main (int argc, char** argv) {
 	char buffer[BUFFER_SIZE];
 
 	int process_counter = 0; 
-	int pid_vector[MAX_PROCESSES];
+	int pid_vector[NR_MAX_PROCESSOS];
 
 	inicializarContas();
 	signal(SIGUSR1, apanhaSinalSIGUSR1);
@@ -50,11 +61,13 @@ int main (int argc, char** argv) {
 		numargs = readLineArguments(args, MAXARGS+1, buffer, BUFFER_SIZE);
 
 
-		/* 
-		 * EOF (end of file) do stdin ou comando SAIR
-		 * arg1(optional) char* "agora"
-		 * in case of argument 1 "agora" calls for a quick end to all processes
-		 * else it will wait for everything to be done before exiting
+		/* Sair / Sair agora
+		 * termina o programa
+		 *
+		 * no caso de EOF (end of file) do stdin ou COMANDO_SAIR
+		 * arg1(optional) char* COMANDO_SAIR_AGORA
+		 * com arg1 manda os processos filhos terminarem
+		 * sem arg1 COMANDO_SAIR_AGORA espera que os filhos terminem  
 		 */
 		if ( numargs < 0 ||
 			(numargs > 0 && 
@@ -88,7 +101,6 @@ int main (int argc, char** argv) {
 				else 
 					printf("FILHO TERMINADO (PID=%d; terminou abruptamente)\n", pid);
 			}
-		
 			
 			printf("--\n");
 			printf("O i-banco terminou\n");

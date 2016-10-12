@@ -71,8 +71,8 @@ void simular(int numAnos) {
 		}
 		printf("\n");
 		
-		/* if parent process send signal for
-		 * quick exit, flag will be 1 */ 
+		/* se um sinal tornar a flag a 1 o processo 
+		 * termina no final da simulacao do ano */ 
 		if (flag){
 			printf("terminado por sinal\n");
 			exit(EXIT_SUCCESS);
