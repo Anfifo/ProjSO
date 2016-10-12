@@ -48,6 +48,7 @@ int lerSaldo(int idConta) {
 }
 
 
+
 void simular(int numAnos) {
 
 	int novo_saldo;
@@ -55,11 +56,13 @@ void simular(int numAnos) {
 	int idConta;
 	flag = 0;
 
+	if (numAnos < 0)
+		return;
 
 	for (ano = 0; ano <= numAnos; ano++){
 		printf("SIMULACAO: Ano: %d \n", ano);
 		printf("=============\n");
-
+		
 		for (idConta = 1; idConta <= NUM_CONTAS; idConta++){
 			novo_saldo = (int) ((float) lerSaldo(idConta) * (1 + TAXAJURO) - (float)CUSTOMANUTENCAO);
 			

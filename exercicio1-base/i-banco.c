@@ -61,7 +61,8 @@ int main (int argc, char** argv) {
 		numargs = readLineArguments(args, MAXARGS+1, buffer, BUFFER_SIZE);
 
 
-		/* Sair / Sair agora
+		/* 
+		 * Sair / Sair agora
 		 * termina o programa
 		 *
 		 * no caso de EOF (end of file) do stdin ou COMANDO_SAIR
@@ -184,7 +185,8 @@ int main (int argc, char** argv) {
 		
 
 
-		/* Simular 
+		/* 
+		 * Simular 
 		 * arg 1 int - nr_de_anos
 		 * faz a simulacao dos nr_de_anos sob as contas existentes
 		 */
