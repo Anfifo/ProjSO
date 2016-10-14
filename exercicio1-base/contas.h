@@ -4,7 +4,7 @@
  * Andre' Fonseca 84698
  * Isabel Dias 84726
  *
- * added:
+ * added/edited:
  * 		simular
  * * * * * * * * * * * * *
 // Operações sobre contas, versao 1
@@ -30,7 +30,9 @@ int lerSaldo(int idConta);
  * WARNING (simular):
  * This function expects to be called on a child process
  * it directly access the vector contasSaldos and changes it
- * calling this function on parents process will make changes to the vector
+ * calling this function on parents process will make unwanted changes to the vector
+ *
+ * simulates all account's balance for the next numAnos years according to formula
  */
 void simular(int numAnos);
 

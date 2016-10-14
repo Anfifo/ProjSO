@@ -53,7 +53,7 @@ int lerSaldo(int idConta) {
  * WARNING:
  * This function expects to be called on a child process
  * it directly access the vector contasSaldos and changes it
- * calling this function on parents process will make changes to the vector
+ * calling this function on parents process will make unwanted changes to the vector
  *
  * since we're using child processes to deal with this function it makes no sense
  * to create an auxiliar vector on this function
