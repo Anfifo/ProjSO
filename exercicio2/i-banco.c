@@ -31,15 +31,70 @@
 #define COMANDO_SAIR "sair"
 #define COMANDO_SAIR_AGORA "agora"
 
+#define OPERACAO_DEBITAR 1337
+#define OPERACAO_CREDITAR 666
+#define OPERACAO_LER_SALDO 007
+#define OPERACAO_SIMULAR 2319
+
+
 #define MAXARGS 3
 #define BUFFER_SIZE 100
 #define NR_MAX_PROCESSOS 20
+#define NUM_TRABALHADORAS 3
+#define CMD_BUFFER_DIM (NUM_TRABALHADORAS * 2)
+
+
+typedef struct {
+	int operacao;
+	int idConta;
+	int valor;
+}comando_t;
+
+
 
 /* function that processes signal SIGUSR1 */
 void apanhaSinalSIGUSR1();
 
 /* flag changed by signal SIGUSR1 used in child process */
 extern int flag;
+
+comando_t cmd_buffer[CMD_BUFFER_DIM];
+
+int buff_write_idx = 0;
+
+int buff_read_idx = 0;
+
+
+
+void initializeBuffer(){
+	/* this is not how it will work :(
+	int i;
+
+	for(i = 0; i < CMD_BUFFER_DIM; i++)
+		cmd_buffer[i] = NULL;
+	*/
+}
+
+
+void addToBuffer(comando_t dualshock){
+	
+
+	/*
+	* we need 
+	* to use semaphores
+	int i;
+
+	while(1)
+		for(i = 0; i < CMD_BUFFER_DIM; i++)
+			if(cmd_buffer[i] == NULL){
+				cmd_buffer[i] = dualshock;
+				return;		
+			}
+	*/
+}
+
+
+
 
 
 int main (int argc, char** argv) {
@@ -122,19 +177,27 @@ int main (int argc, char** argv) {
 		 * debita ao idConta o valor  
 		 */
 		else if (strcmp(args[0], COMANDO_DEBITAR) == 0) {
-			int idConta, valor;
 			if (numargs < 3) {
 				printf("%s: Sintaxe inválida, tente de novo.\n", COMANDO_DEBITAR);
 			   continue;
 			}
 
-			idConta = atoi(args[1]);
-			valor = atoi(args[2]);
+			comando_t dualshock;
 
+			dualshock.operacao = OPERACAO_DEBITAR;
+			dualshock.idConta = atoi(args[1]);
+			dualshock.valor = atoi(args[2]);
+
+			addToBuffer(dualshock);
+
+			/*
+			figure out what to do with this
+			
 			if (debitar (idConta, valor) < 0)
 			   printf("%s(%d, %d): Erro\n\n", COMANDO_DEBITAR, idConta, valor);
 			else
 				printf("%s(%d, %d): OK\n\n", COMANDO_DEBITAR, idConta, valor);
+			*/
 		}
 
 		/*
@@ -144,19 +207,27 @@ int main (int argc, char** argv) {
 		 * credita ao idConta o valor
 		 */
 		else if (strcmp(args[0], COMANDO_CREDITAR) == 0) {
-			int idConta, valor;
 			if (numargs < 3) {
 				printf("%s: Sintaxe inválida, tente de novo.\n", COMANDO_CREDITAR);
 				continue;
 			}
 
-			idConta = atoi(args[1]);
-			valor = atoi(args[2]);
+			comando_t dualshock;
+
+			dualshock.operacao = OPERACAO_CREDITAR;
+			dualshock.idConta = atoi(args[1]);
+			dualshock.valor = atoi(args[2]);
+
+			addToBuffer(dualshock);
+
+			/* 
+			figure out what to do with this
 
 			if (creditar (idConta, valor) < 0)
 				printf("%s(%d, %d): Erro\n\n", COMANDO_CREDITAR, idConta, valor);
 			else
 				printf("%s(%d, %d): OK\n\n", COMANDO_CREDITAR, idConta, valor);
+			*/
 		}
 
 
@@ -166,20 +237,26 @@ int main (int argc, char** argv) {
 		 * le o saldo da conta idConta 
 		 */
 		else if (strcmp(args[0], COMANDO_LER_SALDO) == 0) {
-			int idConta, saldo;
-
 			if (numargs < 2) {
 				printf("%s: Sintaxe inválida, tente de novo.\n", COMANDO_LER_SALDO);
 				continue;
 			}
-		
-			idConta = atoi(args[1]);
-			saldo = lerSaldo (idConta);
-		
+			
+			comando_t dualshock;
+
+			dualshock.operacao = OPERACAO_LER_SALDO;
+			dualshock.idConta = atoi(args[1]);
+						
+			addToBuffer(dualshock);
+
+			/* 
+			figure out what to do with this
+
 			if (saldo < 0)
 				printf("%s(%d): Erro.\n\n", COMANDO_LER_SALDO, idConta);
 			else
 				printf("%s(%d): O saldo da conta é %d.\n\n", COMANDO_LER_SALDO, idConta, saldo);
+			*/
 		}
 
 		
@@ -196,6 +273,12 @@ int main (int argc, char** argv) {
 				printf("%s: Sintaxe inválida, tente de novo.\n", COMANDO_SIMULAR);
 				continue;
 			}
+
+			comando_t dualshock;
+
+			dualshock.operacao = OPERACAO_SIMULAR;
+
+			addToBuffer(dualshock);
 			
 			int pid = fork();
 
