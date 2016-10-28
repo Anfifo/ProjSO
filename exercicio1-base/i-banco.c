@@ -205,8 +205,10 @@ int main (int argc, char** argv) {
 				exit(EXIT_SUCCESS);
 			}
 
+			
 			pid_vector[process_counter] = pid;
 			process_counter++;
+
 		}
 
 

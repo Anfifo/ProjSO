@@ -3,13 +3,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <pthread.h>
 
 #define atrasar() sleep(ATRASO)
 
 
 int contasSaldos[NUM_CONTAS];
 int flag;
-
 
 int contaExiste(int idConta) {
 	return (idConta > 0 && idConta <= NUM_CONTAS);
@@ -25,8 +25,10 @@ int debitar(int idConta, int valor) {
 	atrasar();
 	if (!contaExiste(idConta))
 		return -1;
+	
 	if (contasSaldos[idConta - 1] < valor)
 		return -1;
+
 	atrasar();
 	contasSaldos[idConta - 1] -= valor;
 	return 0;
@@ -36,6 +38,7 @@ int creditar(int idConta, int valor) {
 	atrasar();
 	if (!contaExiste(idConta))
 		return -1;
+
 	contasSaldos[idConta - 1] += valor;
 	return 0;
 }

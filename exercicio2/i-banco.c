@@ -22,6 +22,8 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include <semaphores.h>
+#include <pthread.h>
 
 /* commands */
 #define COMANDO_DEBITAR "debitar"
@@ -60,54 +62,114 @@ extern int flag;
 
 comando_t cmd_buffer[CMD_BUFFER_DIM];
 
-int buff_write_idx = 0;
+pthread_t thread_pool[NUM_TRABALHADORAS];
 
+pthread_mutex_t reading_mutex;
+pthread_mutex_t account_mutexes[NUM_CONTAS];
+
+int accounts_in_use[NUM_TRABALHADORAS];
+int buff_write_idx = 0;
 int buff_read_idx = 0;
 
-
-
-void initializeBuffer(){
-	/* this is not how it will work :(
-	int i;
-
-	for(i = 0; i < CMD_BUFFER_DIM; i++)
-		cmd_buffer[i] = NULL;
-	*/
-}
+sem_t writer_sem;
+sem_t reader_sem;
 
 
 void addToBuffer(comando_t dualshock){
 	
-
-	/*
-	* we need 
-	* to use semaphores
-	int i;
-
-	while(1)
-		for(i = 0; i < CMD_BUFFER_DIM; i++)
-			if(cmd_buffer[i] == NULL){
-				cmd_buffer[i] = dualshock;
-				return;		
-			}
-	*/
+	sem_wait(&writer_sem);
+	cmd_buffer[buff_write_idx] = dualshock;
+	buff_write_idx = (buff_write_idx + 1) % CMD_BUFFER_DIM;
+	sem_post(&reader_sem);
 }
 
+void* readBuffer(){
 
+	comando_t dualshock;
+
+	sem_wait(&reader_sem);
+	pthread_mutex_lock(&reading_mutex);
+	dualshock = cmd_buffer[buff_read_idx];
+	buff_read_idx = (buff_read_idx + 1) % CMD_BUFFER_DIM;
+	pthread_mutex_unlock(&reading_mutex);
+	sem_post(&writer_sem);
+	processCommand(dualshock);
+}
+
+void initAccountMutexes() {
+	int i;
+	for(i = 0; i < NUM_CONTAS; i++)
+		pthread_mutex_init(account_mutexes + i, NULL);
+}
+
+void processCommand(comando_t dualshock){
+
+	pthread_mutex_lock(account_mutexes + (dualshock.idConta - 1));
+
+	switch(dualshock.operacao){
+
+		case OPERACAO_DEBITAR:
+
+			if (debitar (dualshock.idConta, dualshock.valor) < 0)
+				printf("%s(%d, %d): Erro\n\n", COMANDO_DEBITAR, dualshock.idConta, dualshock.valor);
+			else
+				printf("%s(%d, %d): OK\n\n", COMANDO_DEBITAR, dualshock.idConta, dualshock.valor);
+
+			break;
+
+		case OPERACAO_CREDITAR:
+
+			if (creditar (idConta, valor) < 0)
+				printf("%s(%d, %d): Erro\n\n", COMANDO_CREDITAR, dualshock.idConta, dualshock.valor);
+			else
+				printf("%s(%d, %d): OK\n\n", COMANDO_CREDITAR, dualshock.idConta, dualshock.valor);
+
+			break;
+
+		case OPERACAO_LER_SALDO:
+
+			int saldo = lerSaldo(dualshock.idConta);
+
+			if (saldo < 0)
+				printf("%s(%d): Erro.\n\n", COMANDO_LER_SALDO, dualshock.idConta);
+			else
+				printf("%s(%d): O saldo da conta é %d.\n\n", COMANDO_LER_SALDO, dualshock.idConta, dualshock.saldo);
+
+			break;
+
+		default:
+			printf("Comando Desconhecido.\n");
+			break;
+	}
+	
+	pthread_mutex_unlock(account_mutexes + (dualshock.idConta - 1));
+}
 
 
 
 int main (int argc, char** argv) {
 
 	char *args[MAXARGS + 1];
-	char buffer[BUFFER_SIZE];
+	char buffer[BUFFER_SIZE]; 
 
 	int process_counter = 0; 
 	int pid_vector[NR_MAX_PROCESSOS];
+	int i;
 
 	inicializarContas();
 	signal(SIGUSR1, apanhaSinalSIGUSR1);
 
+	sem_init(&writer_sem, 0, CMD_BUFFER_DIM);
+	sem_init(&reader_sem, 0, 0);
+
+	pthread_mutex_init(&reading_mutex, NULL);
+
+	init_account_mutexes();
+
+	for(i = 0; i < NUM_TRABALHADORAS; i++)
+		pthread_create(thread_pool + i, NULL, &readBuffer, NULL);
+
+	
 	printf("Bem-vinda/o ao i-banco\n\n");
 	  
 	while (1) {
@@ -190,14 +252,6 @@ int main (int argc, char** argv) {
 
 			addToBuffer(dualshock);
 
-			/*
-			figure out what to do with this
-			
-			if (debitar (idConta, valor) < 0)
-			   printf("%s(%d, %d): Erro\n\n", COMANDO_DEBITAR, idConta, valor);
-			else
-				printf("%s(%d, %d): OK\n\n", COMANDO_DEBITAR, idConta, valor);
-			*/
 		}
 
 		/*
@@ -219,15 +273,6 @@ int main (int argc, char** argv) {
 			dualshock.valor = atoi(args[2]);
 
 			addToBuffer(dualshock);
-
-			/* 
-			figure out what to do with this
-
-			if (creditar (idConta, valor) < 0)
-				printf("%s(%d, %d): Erro\n\n", COMANDO_CREDITAR, idConta, valor);
-			else
-				printf("%s(%d, %d): OK\n\n", COMANDO_CREDITAR, idConta, valor);
-			*/
 		}
 
 
@@ -248,15 +293,6 @@ int main (int argc, char** argv) {
 			dualshock.idConta = atoi(args[1]);
 						
 			addToBuffer(dualshock);
-
-			/* 
-			figure out what to do with this
-
-			if (saldo < 0)
-				printf("%s(%d): Erro.\n\n", COMANDO_LER_SALDO, idConta);
-			else
-				printf("%s(%d): O saldo da conta é %d.\n\n", COMANDO_LER_SALDO, idConta, saldo);
-			*/
 		}
 
 		
