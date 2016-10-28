@@ -1,7 +1,10 @@
 CFLAGS = -pthread -Wall -pedantic -g -c 
 
-i-banco: commandlinereader.o contas.o i-banco.o
-	gcc -pthread -o i-banco commandlinereader.o contas.o i-banco.o
+i-banco: commandlinereader.o contas.o i-banco.o inputProcessing.o
+	gcc -pthread -o i-banco commandlinereader.o contas.o i-banco.o inputProcessing.o
+
+inputProcessing.o: inputProcessing.c inputProcessing.h
+	gcc $(CFLAGS) inputProcessing.c
 
 commandlinereader.o: commandlinereader.c commandlinereader.h
 	gcc $(CFLAGS) commandlinereader.c
