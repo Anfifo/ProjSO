@@ -33,6 +33,7 @@
 #define COMANDO_SAIR "sair"
 #define COMANDO_SAIR_AGORA "agora"
 
+/* operations related to the commands */
 #define OPERACAO_DEBITAR 1337
 #define OPERACAO_CREDITAR 666
 #define OPERACAO_LER_SALDO 007
@@ -55,12 +56,31 @@ typedef struct {
 
 
 
+
+
+/* functions declarations */
+
 /* function that processes signal SIGUSR1 */
 void apanhaSinalSIGUSR1();
 
 void processCommand(comando_t dualshock);
 
+void addToBuffer(comando_t dualshock);
+
+void* readBuffer();
+
+void initAccountMutexes();
+
+void processCommand(comando_t dualshock);
+
+void processInput();
+
+
+
+/*-- global variables --*/
+
 /* flag changed by signal SIGUSR1 used in child process */
+
 extern int flag;
 
 comando_t cmd_buffer[CMD_BUFFER_DIM];
@@ -69,45 +89,65 @@ pthread_t thread_pool[NUM_TRABALHADORAS];
 
 pthread_mutex_t reading_mutex;
 pthread_mutex_t account_mutexes[NUM_CONTAS];
-
-int accounts_in_use[NUM_TRABALHADORAS];
-int buff_write_idx = 0;
-int buff_read_idx = 0;
-int flag_sair = 0;
-
 sem_t writer_sem;
 sem_t reader_sem;
 
+int accounts_in_use[NUM_TRABALHADORAS];
+int buff_write_idx;
+int buff_read_idx;
+
+int flag_sair;
+
+
+
+
+
+/*-- functions --*/
 
 void addToBuffer(comando_t dualshock){
 	
 	sem_wait(&writer_sem);
+
 	cmd_buffer[buff_write_idx] = dualshock;
 	buff_write_idx = (buff_write_idx + 1) % CMD_BUFFER_DIM;
+	
 	sem_post(&reader_sem);
 }
 
+
 void* readBuffer(){
+	comando_t dualshock;
+
 	while (!flag_sair){
-		comando_t dualshock;
 		sem_wait(&reader_sem);
+		
 		pthread_mutex_lock(&reading_mutex);
+		
 		dualshock = cmd_buffer[buff_read_idx];
 		buff_read_idx = (buff_read_idx + 1) % CMD_BUFFER_DIM;
+		
 		pthread_mutex_unlock(&reading_mutex);
+		
 		sem_post(&writer_sem);
+		
 		processCommand(dualshock);
 	}
+	
 	pthread_exit(NULL);
 	printf("terminou um thread\n");
+	
 	return NULL;
 }
+
+
 
 void initAccountMutexes() {
 	int i;
 	for(i = 0; i < NUM_CONTAS; i++)
 		pthread_mutex_init(account_mutexes + i, NULL);
 }
+
+
 
 void processCommand(comando_t dualshock){
 
@@ -159,31 +199,27 @@ void processCommand(comando_t dualshock){
 
 
 
-int main (int argc, char** argv) {
+
+
+
+
+
+
+
+
+
+void processInput(){
+
+	buff_write_idx = 0;
+	buff_read_idx = 0;
+	flag_sair = 0;
 
 	char *args[MAXARGS + 1];
 	char buffer[BUFFER_SIZE]; 
 
 	int process_counter = 0; 
 	int pid_vector[NR_MAX_PROCESSOS];
-	int i;
 
-	inicializarContas();
-	signal(SIGUSR1, apanhaSinalSIGUSR1);
-
-	sem_init(&writer_sem, 0, CMD_BUFFER_DIM);
-	sem_init(&reader_sem, 0, 0);
-
-	pthread_mutex_init(&reading_mutex, NULL);
-
-	initAccountMutexes();
-
-	for(i = 0; i < NUM_TRABALHADORAS; i++)
-		pthread_create(thread_pool + i, NULL, &readBuffer, NULL);
-
-	
-	printf("Bem-vinda/o ao i-banco\n\n");
-	  
 	while (1) {
 		int numargs;
 		numargs = readLineArguments(args, MAXARGS+1, buffer, BUFFER_SIZE);
@@ -191,7 +227,8 @@ int main (int argc, char** argv) {
 
 		/* 
 		 * Sair / Sair agora
-		 * termina o programa
+		 * termina o programa apos todos os comandos  no cmd_buffer
+		 * sejam concluidos pelos threads e que estes tenham terminado
 		 *
 		 * no caso de EOF (end of file) do stdin ou COMANDO_SAIR
 		 * arg1(optional) char* COMANDO_SAIR_AGORA
@@ -258,7 +295,7 @@ int main (int argc, char** argv) {
 		 * Debitar 
 		 * arg 1 int - idConta
 		 * arg 2 int - valor
-		 * debita ao idConta o valor  
+		 * adiciona a ao cmd_buffer a OPERACAO_DEBITAR  
 		 */
 		else if (strcmp(args[0], COMANDO_DEBITAR) == 0) {
 			if (numargs < 3) {
@@ -280,7 +317,7 @@ int main (int argc, char** argv) {
 		 * Creditar 
 		 * arg 1 int - idConta
 		 * arg 2 int - valor
-		 * credita ao idConta o valor
+		 * adiciona ao cmd_buffer a OPERACAO_CREDITAR
 		 */
 		else if (strcmp(args[0], COMANDO_CREDITAR) == 0) {
 			if (numargs < 3) {
@@ -301,7 +338,7 @@ int main (int argc, char** argv) {
 		/*
 		 * Ler Saldo
 		 * arg 1 int - idConta
-		 * le o saldo da conta idConta 
+		 * adicionar ao cmd_buffer a OPERACAO_LER_SALDO
 		 */
 		else if (strcmp(args[0], COMANDO_LER_SALDO) == 0) {
 			if (numargs < 2) {
@@ -354,8 +391,32 @@ int main (int argc, char** argv) {
 		else {
 			printf("Comando desconhecido. Tente de novo.\n");
 		}
-	} 
+	}
 }
+
+
+int main (int argc, char** argv) {
+
+	int i;
+
+	inicializarContas();
+	signal(SIGUSR1, apanhaSinalSIGUSR1);
+
+	sem_init(&writer_sem, 0, CMD_BUFFER_DIM);
+	sem_init(&reader_sem, 0, 0);
+
+	pthread_mutex_init(&reading_mutex, NULL);
+
+	initAccountMutexes();
+
+	for(i = 0; i < NUM_TRABALHADORAS; i++)
+		pthread_create(thread_pool + i, NULL, &readBuffer, NULL);
+
+	printf("Bem-vinda/o ao i-banco\n\n");
+	processInput();
+}
+
+
 
 void apanhaSinalSIGUSR1(){
 	signal(SIGUSR1, apanhaSinalSIGUSR1);

@@ -1,4 +1,4 @@
-CFLAGS = -Wall -pedantic -g -c -pthread
+CFLAGS = -pthread -Wall -pedantic -g -c 
 
 i-banco: commandlinereader.o contas.o i-banco.o
 	gcc -pthread -o i-banco commandlinereader.o contas.o i-banco.o
