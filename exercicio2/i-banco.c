@@ -22,7 +22,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <signal.h>
-#include <semaphores.h>
+#include <semaphore.h>
 #include <pthread.h>
 
 /* commands */
@@ -37,6 +37,7 @@
 #define OPERACAO_CREDITAR 666
 #define OPERACAO_LER_SALDO 007
 #define OPERACAO_SIMULAR 2319
+#define OPERACAO_SAIR 777
 
 
 #define MAXARGS 3
@@ -57,6 +58,8 @@ typedef struct {
 /* function that processes signal SIGUSR1 */
 void apanhaSinalSIGUSR1();
 
+void processCommand(comando_t dualshock);
+
 /* flag changed by signal SIGUSR1 used in child process */
 extern int flag;
 
@@ -70,6 +73,7 @@ pthread_mutex_t account_mutexes[NUM_CONTAS];
 int accounts_in_use[NUM_TRABALHADORAS];
 int buff_write_idx = 0;
 int buff_read_idx = 0;
+int flag_sair = 0;
 
 sem_t writer_sem;
 sem_t reader_sem;
@@ -84,16 +88,19 @@ void addToBuffer(comando_t dualshock){
 }
 
 void* readBuffer(){
-
-	comando_t dualshock;
-
-	sem_wait(&reader_sem);
-	pthread_mutex_lock(&reading_mutex);
-	dualshock = cmd_buffer[buff_read_idx];
-	buff_read_idx = (buff_read_idx + 1) % CMD_BUFFER_DIM;
-	pthread_mutex_unlock(&reading_mutex);
-	sem_post(&writer_sem);
-	processCommand(dualshock);
+	while (!flag_sair){
+		comando_t dualshock;
+		sem_wait(&reader_sem);
+		pthread_mutex_lock(&reading_mutex);
+		dualshock = cmd_buffer[buff_read_idx];
+		buff_read_idx = (buff_read_idx + 1) % CMD_BUFFER_DIM;
+		pthread_mutex_unlock(&reading_mutex);
+		sem_post(&writer_sem);
+		processCommand(dualshock);
+	}
+	pthread_exit(NULL);
+	printf("terminou um thread\n");
+	return NULL;
 }
 
 void initAccountMutexes() {
@@ -104,6 +111,7 @@ void initAccountMutexes() {
 
 void processCommand(comando_t dualshock){
 
+	int saldo;
 	pthread_mutex_lock(account_mutexes + (dualshock.idConta - 1));
 
 	switch(dualshock.operacao){
@@ -119,7 +127,7 @@ void processCommand(comando_t dualshock){
 
 		case OPERACAO_CREDITAR:
 
-			if (creditar (idConta, valor) < 0)
+			if (creditar (dualshock.idConta, dualshock.valor) < 0)
 				printf("%s(%d, %d): Erro\n\n", COMANDO_CREDITAR, dualshock.idConta, dualshock.valor);
 			else
 				printf("%s(%d, %d): OK\n\n", COMANDO_CREDITAR, dualshock.idConta, dualshock.valor);
@@ -128,13 +136,17 @@ void processCommand(comando_t dualshock){
 
 		case OPERACAO_LER_SALDO:
 
-			int saldo = lerSaldo(dualshock.idConta);
+			saldo = lerSaldo(dualshock.idConta);
 
 			if (saldo < 0)
 				printf("%s(%d): Erro.\n\n", COMANDO_LER_SALDO, dualshock.idConta);
 			else
-				printf("%s(%d): O saldo da conta é %d.\n\n", COMANDO_LER_SALDO, dualshock.idConta, dualshock.saldo);
+				printf("%s(%d): O saldo da conta é %d.\n\n", COMANDO_LER_SALDO, dualshock.idConta, saldo);
 
+			break;
+
+		case OPERACAO_SAIR:
+			flag_sair = 1;
 			break;
 
 		default:
@@ -164,7 +176,7 @@ int main (int argc, char** argv) {
 
 	pthread_mutex_init(&reading_mutex, NULL);
 
-	init_account_mutexes();
+	initAccountMutexes();
 
 	for(i = 0; i < NUM_TRABALHADORAS; i++)
 		pthread_create(thread_pool + i, NULL, &readBuffer, NULL);
@@ -174,7 +186,6 @@ int main (int argc, char** argv) {
 	  
 	while (1) {
 		int numargs;
-	
 		numargs = readLineArguments(args, MAXARGS+1, buffer, BUFFER_SIZE);
 
 
@@ -194,6 +205,7 @@ int main (int argc, char** argv) {
 			int i;
 			int status;
 			int pid;
+			comando_t dualshock;
 
 			if (numargs > 2 || numargs < 1) {
 				printf("%s: Sintaxe inválida, tente de novo.\n", COMANDO_SAIR);
@@ -202,6 +214,11 @@ int main (int argc, char** argv) {
 
 			printf("O i-banco vai terminar\n");
 			printf("--\n");
+
+			dualshock.operacao = OPERACAO_SAIR;
+			for ( i = 0; i < NUM_TRABALHADORAS ; i++)
+				addToBuffer(dualshock);
+
 
 			if (numargs == 2 && (strcmp(args[1], COMANDO_SAIR_AGORA) == 0) ){	
 				for(i = 0; i < process_counter; i++)
@@ -220,6 +237,11 @@ int main (int argc, char** argv) {
 					printf("FILHO TERMINADO (PID=%d; terminou abruptamente)\n", pid);
 			}
 			
+			
+			for ( i = 0; i < NUM_TRABALHADORAS ; i++){
+				pthread_join(thread_pool[i], NULL);
+			}
+
 			printf("--\n");
 			printf("O i-banco terminou\n");
 			exit(EXIT_SUCCESS);

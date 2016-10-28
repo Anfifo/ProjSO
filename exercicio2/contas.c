@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
-#include <pthread.h>
 
 #define atrasar() sleep(ATRASO)
 
