@@ -38,7 +38,7 @@ int main (int argc, char** argv) {
 
 	/*initialize reading_mutex*/
 	if ( pthread_mutex_init(&reading_mutex, NULL) != 0){
-		printf("Erro a criar semaforos, i-banco vai terminar.\n");
+		printf("Erro a criar mutex, i-banco vai terminar.\n");
 		exit(EXIT_FAILURE);
 	}
 	
@@ -50,6 +50,20 @@ int main (int argc, char** argv) {
 		}
 	}
 
+	
+
+	/* initialize mutex responsible for active_commands access*/
+	if ( pthread_mutex_init(&active_commands_mutex, NULL) != 0){
+		printf("Erro a inicializar mutex, i-banco vai terminar.\n");
+		exit(EXIT_FAILURE);
+	}
+
+	/* initialize condition variable fro active_commands */
+	if ( pthread_cond_init(&active_commands_cond, NULL) != 0){
+		printf("Erro a inicializar cond, i-banco vai terminar.\n");
+		exit(EXIT_FAILURE);
+	}
+
 	/* initialize thread_pool*/
 	for(i = 0; i < NUM_TRABALHADORAS; i++){
 		status = pthread_create(thread_pool + i, NULL, &readBuffer, NULL);
@@ -57,25 +71,25 @@ int main (int argc, char** argv) {
 			printf("Erro a criar threads, i-banco vai terminar.\n");
 			exit(EXIT_FAILURE);
 		}
-
 	}
-
-	if ( pthread_mutex_init(&active_commands_mutex, NULL) != 0){
-		printf("Erro a inicializar mutex, i-banco vai terminar.\n");
-		exit(EXIT_FAILURE);
-	}
-
-	if ( pthread_cond_init(&active_commands_cond, NULL) != 0){
-		printf("Erro a inicializar cond, i-banco vai terminar.\n");
-		exit(EXIT_FAILURE);
-	}
-
-
 
 	/* i-banco start */
 	printf("Bem-vinda/o ao i-banco\n\n");
 
 	processInput();
 
+
+	/* destruction of initialized mutexes, semaphores and so on */
+	sem_destroy(&writer_sem);
+	sem_destroy(&reader_sem);
+	pthread_mutex_destroy(&reading_mutex);
+
+	for(i = 0; i < NUM_CONTAS; i++)
+		pthread_mutex_destroy(account_mutexes + i);
+
+	pthread_mutex_destroy(&active_commands_mutex);
+	pthread_cond_destroy(&active_commands_cond);
+
+	exit(EXIT_SUCCESS);
 	return 0;
 }

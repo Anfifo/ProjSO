@@ -12,7 +12,7 @@ commandlinereader.o: commandlinereader.c commandlinereader.h
 contas.o: contas.c contas.h
 	gcc $(CFLAGS) contas.c
 
-i-banco.o: commandlinereader.o contas.o i-banco.c
+i-banco.o: commandlinereader.o contas.o i-banco.c 
 	gcc $(CFLAGS) i-banco.c
 
 clean:

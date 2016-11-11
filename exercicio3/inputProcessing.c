@@ -75,17 +75,15 @@ void* readBuffer(){
 	while (!flag_sair){
 		sem_wait(&reader_sem);
 		
-		pthread_mutex_lock(&active_commands);
+		/* starting a command */
+		pthread_mutex_lock(&active_commands_mutex);
 		active_commands++;
-		pthread_mutex_unlock(&active_commands);
+		pthread_mutex_unlock(&active_commands_mutex);
 
+		/* accessing cmd_buffer related variable */
 		pthread_mutex_lock(&reading_mutex);
-		
-		/* access to shared resources */
 		comando = cmd_buffer[buff_read_idx];
 		buff_read_idx = (buff_read_idx + 1) % CMD_BUFFER_DIM;
-		/* end of access to shared resources */
-		
 		pthread_mutex_unlock(&reading_mutex);
 		
 		sem_post(&writer_sem);
@@ -93,10 +91,11 @@ void* readBuffer(){
 
 		processCommand(comando);
 
-		pthread_mutex_lock(&active_commands);
-		active_commands--;
-		pthread_mutex_unlock(&active_commands);
 
+		/* finished processing command */
+		pthread_mutex_lock(&active_commands_mutex);
+		active_commands--;
+		pthread_mutex_unlock(&active_commands_mutex);
 		pthread_cond_signal(&active_commands_cond);
 	}
 	
@@ -114,9 +113,6 @@ void* readBuffer(){
 
 
 void processCommand(comando_t comando){
-
-	int saldo;
-	
 
 	switch(comando.operacao){
 
@@ -150,7 +146,7 @@ void processCommand(comando_t comando){
 
 			pthread_mutex_lock(account_mutexes + (comando.idConta1 - 1));
 
-			saldo = lerSaldo(comando.idConta1);
+			int saldo = lerSaldo(comando.idConta1);
 
 			if (saldo < 0)
 				printf("%s(%d): Erro.\n\n", COMANDO_LER_SALDO, comando.idConta1);
@@ -168,42 +164,37 @@ void processCommand(comando_t comando){
 
 
 		case OPERACAO_TRANSFERIR:
-
+			/* chosen lock order by smallest first to avoid deadlock */
 			if (comando.idConta1 < comando.idConta2) {
-
 				pthread_mutex_lock(account_mutexes + (comando.idConta1 - 1));
 				pthread_mutex_lock(account_mutexes + (comando.idConta2 - 1));
-
 			}
-
 			else {
-
 				pthread_mutex_lock(account_mutexes + (comando.idConta2 - 1));
 				pthread_mutex_lock(account_mutexes + (comando.idConta1 - 1));
-
 			}
 
-			if (debitar(comando.idConta1, comando.valor) < 0) 
-					printf("Erro ao transferir %d da conta %d para a conta %d", comando.valor, comando.idConta1, comando.idConta2);
+			if (debitar(comando.idConta1, comando.valor) < 0)
+				printf("Erro ao transferir %d da conta %d para a conta %d\n\n", comando.valor, comando.idConta1, comando.idConta2);
 				
-				else {
+			else {
+				if (creditar(comando.idConta2, comando.valor) < 0)
+					printf("Erro ao transferir %d da conta %d para a conta %d\n\n", comando.valor, comando.idConta1, comando.idConta2);
 
-					if (creditar(comando.idConta2, comando.valor) < 0)
-						printf("Erro ao transferir %d da conta %d para a conta %d", comando.valor, comando.idConta1, comando.idConta2);
-
-					else
-						printf("%s(%d, %d, %d): OK", COMANDO_TRANSFERIR, comando.idConta1, comando.idConta2, comando.valor);
-
+				else
+					printf("%s(%d, %d, %d): OK\n\n", COMANDO_TRANSFERIR, comando.idConta1, comando.idConta2, comando.valor);
+			}
+			
 			pthread_mutex_unlock(account_mutexes + (comando.idConta1 - 1));
 			pthread_mutex_unlock(account_mutexes + (comando.idConta2 - 1));
 
 			break;
 
+
 		default:
 			printf("Comando Desconhecido.\n");
 			break;
 	}
-	
 }
 
 
@@ -286,7 +277,7 @@ void processInput(){
 
 			printf("--\n");
 			printf("O i-banco terminou\n");
-			exit(EXIT_SUCCESS);
+			return;
 		}
 	
 
@@ -360,10 +351,13 @@ void processInput(){
 		}
 
 		
+
 		/* 
 		 * Simular 
 		 * arg 1 int - nr_de_anos
 		 * faz a simulacao dos nr_de_anos sob as contas existentes
+		 *
+		 * para nao ocorrer erros, espera que nao haja nenhuma thread a bloquear
 		 */
 		else if (strcmp(args[0], COMANDO_SIMULAR) == 0) {
 			
@@ -392,6 +386,14 @@ void processInput(){
 			process_counter++;
 		}
 
+
+		/*
+		 * Transferir
+		 * arg 1 int - idConta Origem
+		 * arg 2 int - idConta Destino
+		 * arg 3 int - valor 
+		 * transfere valor de conta origem para conta destino
+		 */
 		else if (strcmp(args[0], COMANDO_TRANSFERIR) == 0) {
 
 			if (numargs != 4) {
@@ -405,14 +407,14 @@ void processInput(){
 			int id2 = atoi(args[2]);
 			int valor = atoi(args[3]);
 
-			if (id1 == id2 || id1 < 0 || id2 < 0 || valor < 0){
+			if (id1 == id2 || id1 < 0 || id2 < 0 || valor <= 0){
 				printf("%s: Sintaxe inválida, tente de novo. \n", COMANDO_TRANSFERIR);
 				continue;
 			}
 
 			comando.operacao = OPERACAO_TRANSFERIR;
 			comando.idConta1 = id1;
-			comando.idConta12 = id2;
+			comando.idConta2 = id2;
 			comando.valor = valor;
 
 			addToBuffer(comando);

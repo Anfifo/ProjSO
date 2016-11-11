@@ -39,7 +39,7 @@
 #define OPERACAO_TRANSFERIR 11092016
 
 /* temporary input buffer related defines*/ 
-#define MAXARGS 3
+#define MAXARGS 4
 #define BUFFER_SIZE 100
 
 /* threads and command related defines */ 
@@ -69,10 +69,10 @@ extern pthread_mutex_t reading_mutex;
 /* mutex vector to limit the access to a single thread per account*/
 extern pthread_mutex_t account_mutexes[NUM_CONTAS];
 
-
+/* mutex used for accessing active_commands global variable */
 extern pthread_mutex_t active_commands_mutex;
 
-
+/* cond for the condition variable active command */
 extern pthread_cond_t active_commands_cond;
 
 /* semaphore that controls the insertion of new commands on cmd buffer */
@@ -128,4 +128,5 @@ void processInput();
  * continuously asks for input until stop command is given
  * converts the program's input into commands (comando_t)
  * verifies basic command realted info before creating command
+ * 
  */
