@@ -24,6 +24,10 @@ pthread_mutex_t reading_mutex;
 
 pthread_mutex_t account_mutexes[NUM_CONTAS];
 
+pthread_mutex_t active_commands_mutex;
+
+pthread_cond_t active_commands_cond;
+
 
 sem_t writer_sem;
 
@@ -34,6 +38,8 @@ int buff_write_idx;
 int buff_read_idx;
 
 int flag_sair;
+
+int active_commands;
 
 
 
@@ -69,6 +75,10 @@ void* readBuffer(){
 	while (!flag_sair){
 		sem_wait(&reader_sem);
 		
+		pthread_mutex_lock(&active_commands);
+		active_commands++;
+		pthread_mutex_unlock(&active_commands);
+
 		pthread_mutex_lock(&reading_mutex);
 		
 		/* access to shared resources */
@@ -82,9 +92,15 @@ void* readBuffer(){
 		
 
 		processCommand(comando);
+
+		pthread_mutex_lock(&active_commands);
+		active_commands--;
+		pthread_mutex_unlock(&active_commands);
+
+		pthread_cond_signal(&active_commands_cond);
 	}
 	
-	pthread_exit(NULL); /* for simplicity we won't give exit status*/
+	pthread_exit(NULL); /* for simplicity we won't give exit status */
 	printf("terminou um thread\n");
 	
 	return NULL; /* for simplicity we won't give exit status */
@@ -100,41 +116,87 @@ void* readBuffer(){
 void processCommand(comando_t comando){
 
 	int saldo;
-	pthread_mutex_lock(account_mutexes + (comando.idConta - 1));
+	
 
 	switch(comando.operacao){
 
 		case OPERACAO_DEBITAR:
 
-			if (debitar (comando.idConta, comando.valor) < 0)
-				printf("%s(%d, %d): Erro\n\n", COMANDO_DEBITAR, comando.idConta, comando.valor);
+			pthread_mutex_lock(account_mutexes + (comando.idConta1 - 1));
+
+			if (debitar (comando.idConta1, comando.valor) < 0)
+				printf("%s(%d, %d): Erro\n\n", COMANDO_DEBITAR, comando.idConta1, comando.valor);
 			else
-				printf("%s(%d, %d): OK\n\n", COMANDO_DEBITAR, comando.idConta, comando.valor);
+				printf("%s(%d, %d): OK\n\n", COMANDO_DEBITAR, comando.idConta1, comando.valor);
+
+			pthread_mutex_unlock(account_mutexes + (comando.idConta1 - 1));
 
 			break;
 
 		case OPERACAO_CREDITAR:
 
-			if (creditar (comando.idConta, comando.valor) < 0)
-				printf("%s(%d, %d): Erro\n\n", COMANDO_CREDITAR, comando.idConta, comando.valor);
+			pthread_mutex_lock(account_mutexes + (comando.idConta1 - 1));
+
+			if (creditar (comando.idConta1, comando.valor) < 0)
+				printf("%s(%d, %d): Erro\n\n", COMANDO_CREDITAR, comando.idConta1, comando.valor);
 			else
-				printf("%s(%d, %d): OK\n\n", COMANDO_CREDITAR, comando.idConta, comando.valor);
+				printf("%s(%d, %d): OK\n\n", COMANDO_CREDITAR, comando.idConta1, comando.valor);
+
+			pthread_mutex_unlock(account_mutexes + (comando.idConta1 - 1));
 
 			break;
 
 		case OPERACAO_LER_SALDO:
 
-			saldo = lerSaldo(comando.idConta);
+			pthread_mutex_lock(account_mutexes + (comando.idConta1 - 1));
+
+			saldo = lerSaldo(comando.idConta1);
 
 			if (saldo < 0)
-				printf("%s(%d): Erro.\n\n", COMANDO_LER_SALDO, comando.idConta);
+				printf("%s(%d): Erro.\n\n", COMANDO_LER_SALDO, comando.idConta1);
 			else
-				printf("%s(%d): O saldo da conta é %d.\n\n", COMANDO_LER_SALDO, comando.idConta, saldo);
+				printf("%s(%d): O saldo da conta é %d.\n\n", COMANDO_LER_SALDO, comando.idConta1, saldo);
+
+			pthread_mutex_unlock(account_mutexes + (comando.idConta1 - 1));
 
 			break;
 
 		case OPERACAO_SAIR:
+
 			flag_sair = 1;
+			break;
+
+
+		case OPERACAO_TRANSFERIR:
+
+			if (comando.idConta1 < comando.idConta2) {
+
+				pthread_mutex_lock(account_mutexes + (comando.idConta1 - 1));
+				pthread_mutex_lock(account_mutexes + (comando.idConta2 - 1));
+
+			}
+
+			else {
+
+				pthread_mutex_lock(account_mutexes + (comando.idConta2 - 1));
+				pthread_mutex_lock(account_mutexes + (comando.idConta1 - 1));
+
+			}
+
+			if (debitar(comando.idConta1, comando.valor) < 0) 
+					printf("Erro ao transferir %d da conta %d para a conta %d", comando.valor, comando.idConta1, comando.idConta2);
+				
+				else {
+
+					if (creditar(comando.idConta2, comando.valor) < 0)
+						printf("Erro ao transferir %d da conta %d para a conta %d", comando.valor, comando.idConta1, comando.idConta2);
+
+					else
+						printf("%s(%d, %d, %d): OK", COMANDO_TRANSFERIR, comando.idConta1, comando.idConta2, comando.valor);
+
+			pthread_mutex_unlock(account_mutexes + (comando.idConta1 - 1));
+			pthread_mutex_unlock(account_mutexes + (comando.idConta2 - 1));
+
 			break;
 
 		default:
@@ -142,7 +204,6 @@ void processCommand(comando_t comando){
 			break;
 	}
 	
-	pthread_mutex_unlock(account_mutexes + (comando.idConta - 1));
 }
 
 
@@ -153,6 +214,8 @@ void processInput(){
 	buff_write_idx = 0;
 	buff_read_idx = 0;
 	flag_sair = 0;
+	active_commands = 0;
+
 
 	char *args[MAXARGS + 1];
 	char buffer[BUFFER_SIZE]; 
@@ -235,7 +298,7 @@ void processInput(){
 
 		/* 
 		 * Debitar 
-		 * arg 1 int - idConta
+		 * arg 1 int - idConta1
 		 * arg 2 int - valor
 		 * adiciona a ao cmd_buffer a OPERACAO_DEBITAR  
 		 */
@@ -248,7 +311,7 @@ void processInput(){
 			comando_t comando;
 
 			comando.operacao = OPERACAO_DEBITAR;
-			comando.idConta = atoi(args[1]);
+			comando.idConta1 = atoi(args[1]);
 			comando.valor = atoi(args[2]);
 
 			addToBuffer(comando);
@@ -257,7 +320,7 @@ void processInput(){
 
 		/*
 		 * Creditar 
-		 * arg 1 int - idConta
+		 * arg 1 int - idConta1
 		 * arg 2 int - valor
 		 * adiciona ao cmd_buffer a OPERACAO_CREDITAR
 		 */
@@ -270,7 +333,7 @@ void processInput(){
 			comando_t comando;
 
 			comando.operacao = OPERACAO_CREDITAR;
-			comando.idConta = atoi(args[1]);
+			comando.idConta1 = atoi(args[1]);
 			comando.valor = atoi(args[2]);
 
 			addToBuffer(comando);
@@ -279,7 +342,7 @@ void processInput(){
 
 		/*
 		 * Ler Saldo
-		 * arg 1 int - idConta
+		 * arg 1 int - idConta1
 		 * adicionar ao cmd_buffer a OPERACAO_LER_SALDO
 		 */
 		else if (strcmp(args[0], COMANDO_LER_SALDO) == 0) {
@@ -291,7 +354,7 @@ void processInput(){
 			comando_t comando;
 
 			comando.operacao = OPERACAO_LER_SALDO;
-			comando.idConta = atoi(args[1]);
+			comando.idConta1 = atoi(args[1]);
 						
 			addToBuffer(comando);
 		}
@@ -309,11 +372,13 @@ void processInput(){
 				continue;
 			}
 
-			comando_t comando;
+			pthread_mutex_lock(&active_commands_mutex);
 
-			comando.operacao = OPERACAO_SIMULAR;
+			while (active_commands != 0)
+				pthread_cond_wait(&active_commands_cond, &active_commands_mutex);
 
-			addToBuffer(comando);
+			pthread_mutex_unlock(&active_commands_mutex);
+			
 			
 			int pid = fork();
 
@@ -325,6 +390,32 @@ void processInput(){
 
 			pid_vector[process_counter] = pid;
 			process_counter++;
+		}
+
+		else if (strcmp(args[0], COMANDO_TRANSFERIR) == 0) {
+
+			if (numargs != 4) {
+				printf("%s: Sintaxe inválida, tente de novo. \n", COMANDO_TRANSFERIR);
+				continue;
+			}
+
+			comando_t comando;
+
+			int id1 = atoi(args[1]);
+			int id2 = atoi(args[2]);
+			int valor = atoi(args[3]);
+
+			if (id1 == id2 || id1 < 0 || id2 < 0 || valor < 0){
+				printf("%s: Sintaxe inválida, tente de novo. \n", COMANDO_TRANSFERIR);
+				continue;
+			}
+
+			comando.operacao = OPERACAO_TRANSFERIR;
+			comando.idConta1 = id1;
+			comando.idConta12 = id2;
+			comando.valor = valor;
+
+			addToBuffer(comando);
 		}
 
 

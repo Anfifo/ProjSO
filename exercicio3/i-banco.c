@@ -57,6 +57,17 @@ int main (int argc, char** argv) {
 			printf("Erro a criar threads, i-banco vai terminar.\n");
 			exit(EXIT_FAILURE);
 		}
+
+	}
+
+	if ( pthread_mutex_init(&active_commands_mutex, NULL) != 0){
+		printf("Erro a inicializar mutex, i-banco vai terminar.\n");
+		exit(EXIT_FAILURE);
+	}
+
+	if ( pthread_cond_init(&active_commands_cond, NULL) != 0){
+		printf("Erro a inicializar cond, i-banco vai terminar.\n");
+		exit(EXIT_FAILURE);
 	}
 
 

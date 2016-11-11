@@ -28,6 +28,7 @@
 #define COMANDO_SIMULAR "simular"
 #define COMANDO_SAIR "sair"
 #define COMANDO_SAIR_AGORA "agora"
+#define COMANDO_TRANSFERIR "transferir"
 
 /* operations related to the commands */
 #define OPERACAO_DEBITAR 1337
@@ -35,6 +36,7 @@
 #define OPERACAO_LER_SALDO 007
 #define OPERACAO_SIMULAR 2319
 #define OPERACAO_SAIR 112
+#define OPERACAO_TRANSFERIR 11092016
 
 /* temporary input buffer related defines*/ 
 #define MAXARGS 3
@@ -49,7 +51,8 @@
 /* command structure */
 typedef struct {
 	int operacao;
-	int idConta;
+	int idConta1;
+	int idConta2;
 	int valor;
 }comando_t;
 
@@ -66,6 +69,12 @@ extern pthread_mutex_t reading_mutex;
 /* mutex vector to limit the access to a single thread per account*/
 extern pthread_mutex_t account_mutexes[NUM_CONTAS];
 
+
+extern pthread_mutex_t active_commands_mutex;
+
+
+extern pthread_cond_t active_commands_cond;
+
 /* semaphore that controls the insertion of new commands on cmd buffer */
 extern sem_t writer_sem;
 
@@ -77,6 +86,8 @@ extern int buff_write_idx;
 
 /* tracks cmd buffer's next reading position */
 extern int buff_read_idx;
+
+
 
 
 
