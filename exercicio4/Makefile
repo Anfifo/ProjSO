@@ -19,4 +19,4 @@ run:
 	./i-banco
 
 clean:
-	rm -f *.o i-banco log.txt
+	rm -f *.o i-banco *.txt

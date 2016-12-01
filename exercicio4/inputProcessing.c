@@ -409,7 +409,7 @@ void processInput(){
 			if (pid == 0){
 
 				char name[100];
-				snprintf(name, 50, "i-banco-sim-%d.txt ", getpid());
+				snprintf(name, 50, "i-banco-sim-%d.txt", getpid());
 
 				int file_descriptor = open(name, O_RDWR|O_CREAT|O_APPEND, S_IRWXU);
 				if (file_descriptor == -1)
