@@ -407,7 +407,22 @@ void processInput(){
 
 			/* code for child process */
 			if (pid == 0){
+
+				char name[100];
+				snprintf(name, 50, "i-banco-sim-%d.txt ", getpid());
+
+				int file_descriptor = open(name, O_RDWR|O_CREAT|O_APPEND, S_IRWXU);
+				if (file_descriptor == -1)
+					perror("erro ao abrir i-banco-sim.");
+
+				close(1);
+
+				dup(file_descriptor);
+				
 				simular(atoi(args[1]));
+
+				close(file_descriptor);
+
 				exit(EXIT_SUCCESS);
 			}
 
