@@ -131,7 +131,7 @@ void processCommand(comando_t comando){
 				size = snprintf(buffer + size, 25, "%s(%d, %d): OK\n\n", COMANDO_DEBITAR, comando.idConta1, comando.valor);
 			}
 
-			if (write("log.txt", size) == -1) 
+			if (write("log.txt", buffer, size) == -1) 
 				printf("Erro na escrita.");
 
 			pthread_mutex_unlock(account_mutexes + (comando.idConta1 - 1));
@@ -151,7 +151,7 @@ void processCommand(comando_t comando){
 				size = snprintf(buffer + size, 25, "%s(%d, %d): OK\n\n", COMANDO_CREDITAR, comando.idConta1, comando.valor);
 			}
 
-			if (write("log.txt", size) == -1) 
+			if (write("log.txt", buffer, size) == -1) 
 				printf("Erro na escrita.");
 
 			pthread_mutex_unlock(account_mutexes + (comando.idConta1 - 1));
@@ -173,7 +173,7 @@ void processCommand(comando_t comando){
 				size = snprintf(buffer + size, 25, "%s(%d): O saldo da conta é %d.\n\n", COMANDO_LER_SALDO, comando.idConta1, saldo);
 			}
 
-			if (write("log.txt", size) == -1) 
+			if (write("log.txt", buffer, size) == -1) 
 				printf("Erro na escrita.");
 
 			pthread_mutex_unlock(account_mutexes + (comando.idConta1 - 1));
@@ -211,7 +211,7 @@ void processCommand(comando_t comando){
 					size = snprintf(buffer + size, 25, "%s(%d, %d, %d): OK\n\n", COMANDO_TRANSFERIR, comando.idConta1, comando.idConta2, comando.valor);
 			}
 			
-			if (write("log.txt", size) == -1) 
+			if (write("log.txt", buffer, size) == -1) 
 				printf("Erro na escrita.");
 
 			pthread_mutex_unlock(account_mutexes + (comando.idConta1 - 1));
