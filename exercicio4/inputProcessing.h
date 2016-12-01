@@ -20,6 +20,8 @@
 #include <signal.h>
 #include <semaphore.h>
 #include <pthread.h>
+#include <fcntl.h>
+#include <sys/types.h>
 
 /* commands */
 #define COMANDO_DEBITAR "debitar"
@@ -87,6 +89,8 @@ extern int buff_write_idx;
 /* tracks cmd buffer's next reading position */
 extern int buff_read_idx;
 
+/* file descriptor that logs all command operations */
+extern int log_file_descriptor;
 
 
 

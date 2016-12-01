@@ -17,7 +17,6 @@
  */
 
 
-
 int main (int argc, char** argv) {
 
 	int i;
@@ -64,8 +63,14 @@ int main (int argc, char** argv) {
 		exit(EXIT_FAILURE);
 	}
 
+
 	/* open log file */
-	log_file = open("log.txt", O_WRONLY);
+	log_file_descriptor = open("log.txt", O_RDWR|O_CREAT|O_APPEND, S_IRWXU);
+	if (log_file_descriptor == -1){
+		perror("erro ao abrir log.txt");
+
+	}
+
 
 	/* initialize thread_pool*/
 	for(i = 0; i < NUM_TRABALHADORAS; i++){
@@ -94,7 +99,7 @@ int main (int argc, char** argv) {
 	pthread_mutex_destroy(&active_commands_mutex);
 	pthread_cond_destroy(&active_commands_cond);
 
-	close(log_file);
+	close(log_file_descriptor);
 
 	exit(EXIT_SUCCESS);
 	return 0;
