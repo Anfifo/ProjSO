@@ -64,6 +64,9 @@ int main (int argc, char** argv) {
 		exit(EXIT_FAILURE);
 	}
 
+	/* open log file */
+	log_file = open("log.txt", O_WRONLY);
+
 	/* initialize thread_pool*/
 	for(i = 0; i < NUM_TRABALHADORAS; i++){
 		status = pthread_create(thread_pool + i, NULL, &readBuffer, NULL);
@@ -80,6 +83,7 @@ int main (int argc, char** argv) {
 
 
 	/* destruction of initialized mutexes, semaphores and so on */
+
 	sem_destroy(&writer_sem);
 	sem_destroy(&reader_sem);
 	pthread_mutex_destroy(&reading_mutex);
@@ -89,6 +93,8 @@ int main (int argc, char** argv) {
 
 	pthread_mutex_destroy(&active_commands_mutex);
 	pthread_cond_destroy(&active_commands_cond);
+
+	close(log_file);
 
 	exit(EXIT_SUCCESS);
 	return 0;
