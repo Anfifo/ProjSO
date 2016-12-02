@@ -1,4 +1,7 @@
 
+#ifndef COMMANDS_H
+#define COMMANDS_H
+
 /* 
  * * * * * * * * * * * * *
  * Grupo: 4
@@ -147,3 +150,7 @@ void processInput();
  */
 
 void readCommand(comando_t comando);
+
+
+
+#endif
