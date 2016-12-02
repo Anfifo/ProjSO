@@ -9,7 +9,7 @@
  * Isabel Dias 84726
  * 
  * * * * * * * * * * * * *
-// Projeto SO - exercicio 2, version 1
+// Projeto SO - exercicio 4, version 1
 // Sistemas Operativos, DEI/IST/ULisboa 2016-17
 */
 
@@ -27,6 +27,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <time.h>
+#include <errno.h>
 
 
 /* commands */
@@ -57,6 +58,14 @@
 #define NR_MAX_PROCESSOS 20
 #define NUM_TRABALHADORAS 3
 #define CMD_BUFFER_DIM (NUM_TRABALHADORAS * 2)
+
+/*default name for the pipe*/
+#define PIPE_NAME "i-banco-pipe"
+
+
+/* size for name vectors */
+#define NAME_SIZE 100
+#define PIPE_MESSAGE_SIZE 1000
 
 
 /* command structure */
@@ -105,15 +114,31 @@ extern int log_file_descriptor;
 
 
 void initializeCommandResources();
+/**
+ * initializes all needed resources for the commands to function properly
+ */
 
 void closeCommandResources();
+/**
+ * destroys/frees/unlinks all the resources held by these commands
+ */
 
+void readCommand(comando_t comando);
+/**
+ * pre processing of a command, decides (depending on it's operation)
+ * how it will be executed and executes them
+ * @param comando which will be pre-processed
+ */
+
+void apanhaSinalSIGPIPE();
+/**
+ * function that processes the signal SIGPIPE when it attempts to write on broken pipe
+ */
 
 void apanhaSinalSIGUSR1();
 /** 
  * function that processes signal SIGUSR1 on child processes
  */
-
 
 
 void addToBuffer(comando_t comando);
@@ -149,7 +174,6 @@ void processInput();
  * 
  */
 
-void readCommand(comando_t comando);
 
 
 

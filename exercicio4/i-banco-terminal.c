@@ -2,28 +2,134 @@
 #include "commands.h"
 
 
+
+/**
+ * GRUPO 4
+ * Andre Fonseca 84698
+ * Isabel Dias 84726
+ * Projecto de SO 
+ * exercicio 4
+ */
+
+/* ibanco server pipe */
 int i_banco_pipe;
-char pipe_name[20];
+
+/* name for the response pipe */
+char response_pipe_name[NAME_SIZE];
+
+/* activated on attempt to write on broken pipe */
+int flag_closed_pipe;
+
+
+void addToPipe(comando_t comando);
+void apanhaSinalSIGPIPE();
+void processInput();
 
 
 
+/**
+ * receives input from stdin, generates valid commands and sends
+ * to the server pipe (if no pipe name is given, default will be opened)
+ * @param  argc number of arguments main receives
+ * @param  argv vector of string arguments
+ * @return      status
+ */
+int main(int argc, char const *argv[]){
+	
+	flag_closed_pipe = 0;
+	char i_banco_pipe_name[NAME_SIZE];
+	signal(SIGPIPE, apanhaSinalSIGPIPE);
+
+
+	/* decides target pipe name */
+	if (argc == 1)
+		strcpy(i_banco_pipe_name, "i-banco-pipe");
+	else if(argc == 2)
+		strcpy(i_banco_pipe_name, argv[1]);
+	else{
+		printf("Bad argument input\n");
+		return 0;
+	}
+
+
+	i_banco_pipe = open(i_banco_pipe_name,O_WRONLY);	
+	if (i_banco_pipe == -1)
+		perror("Initialization - Erro a abrir o pipe do server");
+
+	printf("- Connection to Server Successful -\n\n");
+
+	/* create response pipe name with pid */
+	snprintf(response_pipe_name, NAME_SIZE, "%d", getpid());
+
+
+	/*Creating response pipe */
+	if(unlink(response_pipe_name))
+		if(errno != ENOENT)
+			perror(" initialization - Erro no unlink do response pipe");
+
+	if (mkfifo(response_pipe_name, S_IRWXU) != 0)
+		perror("initialization - Erro a abrir o pipe terminal.");
+
+
+	/* starts the processing 
+	loop of received input */
+	printf("Bem vinda/o ao i-banco-terminal.\n\n");
+	processInput();
+	
+
+	if(close(i_banco_pipe))
+		perror("Erro no close do default pipe");
+
+	if(unlink(response_pipe_name))
+		if(errno != ENOENT)
+			perror("Erro no unlink do response pipe");
+	
+	return 0;
+}
+
+
+
+
+
+/**
+ * Send to server pipe the given command and if necessary
+ * awaits for response from response pipe and prints response
+ * @param comando to be sent to pipe
+ */
 void addToPipe(comando_t comando){
+	
 	comando.pid = getpid();
 
 	if (write(i_banco_pipe, &comando, sizeof(comando_t)) == -1)
 		perror("Erro na escrita no i-banco-pipe.");
 
+	/* operators that do not need response */
+	if( comando.operacao == OPERACAO_SAIR_AGORA ||
+		comando.operacao == OPERACAO_SAIR ||
+		comando.operacao == OPERACAO_SIMULAR)
+		return;
 
-	int fd = open(pipe_name,O_RDONLY);
-	if (fd < 0)
+	
+	int fd = open(response_pipe_name,O_RDONLY);
+	
+	if (fd < 0){
 		perror("Erro ao abrir o pipe de retorno.");
+		return;
+	}
 
-
-	char buffer[100];
-	read(fd, buffer, 100);
+	/* prints response from server (response pipe)*/
+	char buffer[NAME_SIZE];
+	
+	if(read(fd, buffer, NAME_SIZE) < 0)
+		perror("addToPipe - erro ao ler do response-pipe");
+	
 	printf("%s\n", buffer);
-	close(fd);
+	
+	if(close(fd) < 0)
+		perror("addToPipe - erro ao fechar o response-pipe");
 }
+
+
 
 
 
@@ -34,8 +140,12 @@ void processInput(){
 	char *args[MAXARGS + 1];
 	char buffer[BUFFER_SIZE]; 
 
-
 	while (1) {
+
+		if (flag_closed_pipe){
+			printf("Connection with server lost, please shutdown with command \"sair-terminal\".\n");
+		}
+
 		int numargs;
 		numargs = readLineArguments(args, MAXARGS+1, buffer, BUFFER_SIZE);
 
@@ -216,31 +326,7 @@ void processInput(){
 
 
 
-int main() {
-
-	printf("Bem vinda/o ao i-banco-terminal.\n\n");
-
-	i_banco_pipe = open("i-banco-pipe",O_WRONLY);
-	if (i_banco_pipe == -1)
-		perror("Erro a abrir o pipe.");
-
-	printf("- Connection Successful -\n\n");
-	
-	snprintf(pipe_name, 50, "%d", getpid());
-
-	unlink(pipe_name);
-
-
-	int status = mkfifo(pipe_name, S_IRWXU);
-	if (status != 0)
-		perror("Erro a abrir o pipe terminal.");
-
-
-	processInput();
-	
-	close(i_banco_pipe);
-	unlink(pipe_name);
-	
-
-	return 0;
+void apanhaSinalSIGPIPE(){
+	signal(SIGPIPE, apanhaSinalSIGPIPE);
+	flag_closed_pipe = 1;
 }

@@ -26,10 +26,13 @@ i-banco-terminal.o: commandlinereader.o i-banco-terminal.c
 	gcc $(CFLAGS) i-banco-terminal.c
 
 run:
-	gnome-terminal -e ~/Documents/SO/ProjSO/exercicio4/i-banco; gnome-terminal -e ~/Documents/SO/ProjSO/exercicio4/i-banco-terminal
+	gnome-terminal -e $(shell pwd)/i-banco; gnome-terminal -e $(shell pwd)/i-banco-terminal
 
 newt:
-	gnome-terminal -e ~/Documents/SO/ProjSO/exercicio4/i-banco-terminal
+	gnome-terminal -e $(shell pwd)/i-banco-terminal
+
+zip: clean
+	zip exercicio4.zip *
 
 clean:
-	rm -f *.o i-banco i-banco-terminal *.txt i-banco-pipe 1* 2* 3* 4* 5* 6* 7* 8* 9*
+	rm -f *.o i-banco i-banco-terminal *.txt i-banco-pipe 1* 2* 3* 4* 5* 6* 7* 8* 9* *.zip

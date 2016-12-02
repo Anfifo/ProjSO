@@ -1,6 +1,13 @@
-
 #include <stdio.h>
 #include "commands.h"
+
+/**
+ * GRUPO 4
+ * Andre Fonseca 84698
+ * Isabel Dias 84726
+ * Projecto de SO 
+ * exercicio 4
+ */
 
 
 comando_t cmd_buffer[CMD_BUFFER_DIM];
@@ -39,7 +46,7 @@ int active_commands;
 
 int log_file_descriptor;
 
-char pipe_name[100];
+char pipe_name[NAME_SIZE];
 
 
 
@@ -77,8 +84,6 @@ void initializeCommandResources(){
 		}
 	}
 
-	
-
 	/* initialize mutex responsible for active_commands access*/
 	if ( pthread_mutex_init(&active_commands_mutex, NULL) != 0){
 		perror("Erro a inicializar mutex, i-banco vai terminar.\n");
@@ -91,14 +96,12 @@ void initializeCommandResources(){
 		exit(EXIT_FAILURE);
 	}
 
-
 	/* open log file */
 	log_file_descriptor = open("log.txt", O_RDWR|O_CREAT|O_APPEND, S_IRWXU);
 	if (log_file_descriptor == -1){
 		perror("erro ao abrir log.txt");
 
 	}
-
 
 	/* initialize thread_pool*/
 	for(i = 0; i < NUM_TRABALHADORAS; i++){
@@ -124,8 +127,10 @@ void closeCommandResources(){
 	pthread_mutex_destroy(&active_commands_mutex);
 	pthread_cond_destroy(&active_commands_cond);
 
-	close(log_file_descriptor);
+	if(close(log_file_descriptor))
+		perror("closeCommandResources - erro a fechar log");
 }
+
 
 
 
@@ -145,17 +150,22 @@ void readCommand(comando_t comando) {
 
 		/* code for child process */
 		if (pid == 0){
-			char name[100];
-			snprintf(name, 50, "i-banco-sim-%d.txt", getpid());
+			char name[NAME_SIZE];
+			snprintf(name, NAME_SIZE, "i-banco-sim-%d.txt", getpid());
 
 			int file_descriptor = open(name, O_RDWR|O_CREAT|O_APPEND, S_IRWXU);
 			if (file_descriptor == -1)
 				perror("erro ao abrir i-banco-sim.");
 
-			close(1);
+			if(close(1))
+				perror("simular - erro a fechar stdout");
+			
 			dup(file_descriptor);
 			simular(comando.valor);
-			close(file_descriptor);
+			
+			if(close(file_descriptor))
+				perror("simular - erro a fechar ficheiro");
+			
 			exit(EXIT_SUCCESS);
 		}
 
@@ -194,7 +204,10 @@ void readCommand(comando_t comando) {
 		/*  waits for all threads to end, 
 			for simplicity no end status is checked  */
 		for ( i = 0; i < NUM_TRABALHADORAS ; i++){
-			pthread_join(thread_pool[i], NULL);
+			if( pthread_join(thread_pool[i], NULL) != 0){
+				perror("erro no pthread-join");
+				exit(EXIT_SUCCESS);
+			}
 		}
 
 		printf("--\n");
@@ -206,9 +219,6 @@ void readCommand(comando_t comando) {
 		addToBuffer(comando);
 	}
 }
-
-
-
 
 
 
@@ -269,7 +279,6 @@ void* readBuffer(){
 
 
 
-
 void processCommand(comando_t comando){
 
 
@@ -278,16 +287,25 @@ void processCommand(comando_t comando){
 		return;
 	}
 
-	char buffer[400];
-	char outputPipe[50];
-	int size = snprintf(buffer, 50, "%lu: ", pthread_self());
+	char buffer[PIPE_MESSAGE_SIZE];
+	char outputPipe[NAME_SIZE];
+
+	int size = snprintf(buffer, PIPE_MESSAGE_SIZE, "%lu: ", pthread_self());
 	int initial_size = size;
-	snprintf(outputPipe, 50, "%d", comando.pid);
+	
+	snprintf(outputPipe, NAME_SIZE, "%d", comando.pid);
 
 	int temp_pipe = open(outputPipe ,O_WRONLY);
+	
+	if(temp_pipe < 0){
+		perror("processCommand - error opening response-pipe");
+		return;
+	}
+
 	time_t time1;
 	time_t time2;
 
+	/*starting time of execution */
 	time(&time1);
 
 	switch(comando.operacao){
@@ -297,10 +315,10 @@ void processCommand(comando_t comando){
 			pthread_mutex_lock(account_mutexes + (comando.idConta1 - 1));
 
 			if (debitar (comando.idConta1, comando.valor) < 0) {
-				size += snprintf(buffer + size, 50, "%s(%d, %d): Erro\n\n", COMANDO_DEBITAR, comando.idConta1, comando.valor);
+				size += snprintf(buffer + size, PIPE_MESSAGE_SIZE, "%s(%d, %d): Erro\n\n", COMANDO_DEBITAR, comando.idConta1, comando.valor);
 			}
 			else {
-				size += snprintf(buffer + size, 50, "%s(%d, %d): OK\n\n", COMANDO_DEBITAR, comando.idConta1, comando.valor);
+				size += snprintf(buffer + size, PIPE_MESSAGE_SIZE, "%s(%d, %d): OK\n\n", COMANDO_DEBITAR, comando.idConta1, comando.valor);
 			}
 
 			if (write(log_file_descriptor, buffer, size) == -1) 
@@ -310,15 +328,16 @@ void processCommand(comando_t comando){
 
 			break;
 
+
 		case OPERACAO_CREDITAR:
 
 			pthread_mutex_lock(account_mutexes + (comando.idConta1 - 1));
 
 			if (creditar (comando.idConta1, comando.valor) < 0) {
-				size += snprintf(buffer + size, 50, "%s(%d, %d): Erro\n\n", COMANDO_CREDITAR, comando.idConta1, comando.valor);
+				size += snprintf(buffer + size, PIPE_MESSAGE_SIZE, "%s(%d, %d): Erro\n\n", COMANDO_CREDITAR, comando.idConta1, comando.valor);
 			}
 			else {
-				size += snprintf(buffer + size, 50, "%s(%d, %d): OK\n\n", COMANDO_CREDITAR, comando.idConta1, comando.valor);
+				size += snprintf(buffer + size, PIPE_MESSAGE_SIZE, "%s(%d, %d): OK\n\n", COMANDO_CREDITAR, comando.idConta1, comando.valor);
 			}
 
 			if (write(log_file_descriptor, buffer, size) == -1)
@@ -328,6 +347,7 @@ void processCommand(comando_t comando){
 
 			break;
 
+
 		case OPERACAO_LER_SALDO:
 
 			pthread_mutex_lock(account_mutexes + (comando.idConta1 - 1));
@@ -335,10 +355,10 @@ void processCommand(comando_t comando){
 			int saldo = lerSaldo(comando.idConta1);
 
 			if (saldo < 0) {
-				size += snprintf(buffer + size, 50, "%s(%d): Erro.\n\n", COMANDO_LER_SALDO, comando.idConta1);
+				size += snprintf(buffer + size, PIPE_MESSAGE_SIZE, "%s(%d): Erro.\n\n", COMANDO_LER_SALDO, comando.idConta1);
 			}
 			else {
-				size += snprintf(buffer + size, 50, "%s(%d): O saldo da conta é %d.\n\n", COMANDO_LER_SALDO, comando.idConta1, saldo);
+				size += snprintf(buffer + size, PIPE_MESSAGE_SIZE, "%s(%d): O saldo da conta é %d.\n\n", COMANDO_LER_SALDO, comando.idConta1, saldo);
 			}
 
 			if (write(log_file_descriptor, buffer, size) == -1) 
@@ -362,15 +382,15 @@ void processCommand(comando_t comando){
 			}
 
 			if (debitar(comando.idConta1, comando.valor) < 0){
-				size += snprintf(buffer + size, 50, "Erro ao transferir %d da conta %d para a conta %d\n\n", comando.valor, comando.idConta1, comando.idConta2);
+				size += snprintf(buffer + size, PIPE_MESSAGE_SIZE, "Erro ao transferir %d da conta %d para a conta %d\n\n", comando.valor, comando.idConta1, comando.idConta2);
 			}
 
 			else {
 				if (creditar(comando.idConta2, comando.valor) < 0){
-					size += snprintf(buffer + size, 50, "Erro ao transferir %d da conta %d para a conta %d\n\n", comando.valor, comando.idConta1, comando.idConta2);
+					size += snprintf(buffer + size, PIPE_MESSAGE_SIZE, "Erro ao transferir %d da conta %d para a conta %d\n\n", comando.valor, comando.idConta1, comando.idConta2);
 				}
 				else{
-					size += snprintf(buffer + size, 50, "%s(%d, %d, %d): OK\n\n", COMANDO_TRANSFERIR, comando.idConta1, comando.idConta2, comando.valor);
+					size += snprintf(buffer + size, PIPE_MESSAGE_SIZE, "%s(%d, %d, %d): OK\n\n", COMANDO_TRANSFERIR, comando.idConta1, comando.idConta2, comando.valor);
 				}
 			}
 			
@@ -389,9 +409,12 @@ void processCommand(comando_t comando){
 	}
 
 	time(&time2);
-	size += snprintf(buffer + size-1, 200, "\toperation time: %lf \n", difftime(time2,time1));
+	size += snprintf(buffer + size-1, PIPE_MESSAGE_SIZE, "\toperation time: %lf \n", difftime(time2,time1));
 	if (write(temp_pipe, buffer+initial_size, size-initial_size) == -1) 
 		printf("Error on delivering operation result");
+
+	if(close(temp_pipe) == -1)
+		perror("processCommand - erro ao fechar response-pipe");
 }
 
 
