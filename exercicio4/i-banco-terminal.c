@@ -1,21 +1,27 @@
+#include <stdio.h>
+#include "inputProcessing.h"
 
 
-int pipe;
+int i_banco_pipe;
+
 char pipe_name[20];
 
-void addToPipe(comando_t comando){
-	if (write(pipe, comando, sizeof(comando_t)) == -1)
-		perror("Erro na escrita no pipe.");
 
+
+void addToPipe(comando_t comando){
+	if (write(i_banco_pipe, &comando, sizeof(comando_t)) == -1)
+		perror("Erro na escrita no i-banco-pipe.");
+
+/*
 	int fd = open(pipe_name,O_RDONLY);
 	if (fd < 0)
 		perror("Erro na escrita do pipe terminal.");
 
 
 	char buffer[100];
-	fgets(buffer, 100, fd);
+	read(fd, buffer, 100);
 	printf("%s\n", buffer);
-
+*/
 }
 
 void processInput(){
@@ -43,9 +49,6 @@ void processInput(){
 			(numargs > 0 && 
 			(strcmp(args[0], COMANDO_SAIR) == 0) )){
 			
-			int i;
-			int status;
-			int pid;
 			comando_t comando;
 
 			if (numargs > 2 || numargs < 1) {
@@ -65,10 +68,10 @@ void processInput(){
 
 		else if (numargs < 0 || 
 				(numargs > 0 && 
-				(strcmp(args[0], COMANDO_SAIR_TERMINAL) ))) {
+				(strcmp(args[0], COMANDO_SAIR_TERMINAL) == 0 ))) {
 
 			printf("i-banco-terminal vai terminar.\n");
-
+			sleep(2);
 			return;
 		}
 	
@@ -207,24 +210,28 @@ void processInput(){
 
 int main() {
 
-	int pipe = open("i-banco-pipe",O_WRONLY);
-	if (pipe == -1)
+	printf("Bem vinda/o ao i-banco-terminal.\n\n");
+
+	i_banco_pipe = open("i-banco-pipe",O_WRONLY);
+	if (i_banco_pipe == -1)
 		perror("Erro a abrir o pipe.");
 
-
+	printf("- Connection to i-banco Successful -\n\n");
 	snprintf(pipe_name, 50, "%d", getpid());
 
 	unlink(pipe_name);
 
+	/*
 	int status = mkfifo(pipe_name, S_IWUSR);
 	if (status != 0)
 		perror("Erro a abrir o pipe terminal.");
+	*/
 
 	processInput();
 	
 	unlink(pipe_name);
 	
-	close(pipe);
+	close(i_banco_pipe);
 
 	return 0;
 }

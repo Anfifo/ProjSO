@@ -22,6 +22,8 @@
 #include <pthread.h>
 #include <fcntl.h>
 #include <sys/types.h>
+#include <sys/stat.h>
+
 
 /* commands */
 #define COMANDO_DEBITAR "debitar"
@@ -31,6 +33,7 @@
 #define COMANDO_SAIR "sair"
 #define COMANDO_SAIR_AGORA "agora"
 #define COMANDO_TRANSFERIR "transferir"
+#define COMANDO_SAIR_TERMINAL "sair-terminal"
 
 /* operations related to the commands */
 #define OPERACAO_DEBITAR 1337
@@ -39,6 +42,8 @@
 #define OPERACAO_SIMULAR 2319
 #define OPERACAO_SAIR 112
 #define OPERACAO_TRANSFERIR 11092016
+#define OPERACAO_SAIR_AGORA 4582
+ 
 
 /* temporary input buffer related defines*/ 
 #define MAXARGS 4
@@ -135,3 +140,5 @@ void processInput();
  * verifies basic command realted info before creating command
  * 
  */
+
+void readCommand(comando_t comando);
