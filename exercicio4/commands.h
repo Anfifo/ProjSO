@@ -101,6 +101,10 @@ extern int log_file_descriptor;
 
 
 
+void initializeCommandResources();
+
+void closeCommandResources();
+
 
 void apanhaSinalSIGUSR1();
 /** 

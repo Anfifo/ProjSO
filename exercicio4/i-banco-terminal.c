@@ -1,9 +1,8 @@
 #include <stdio.h>
-#include "inputProcessing.h"
+#include "commands.h"
 
 
 int i_banco_pipe;
-
 char pipe_name[20];
 
 
@@ -23,8 +22,12 @@ void addToPipe(comando_t comando){
 	char buffer[100];
 	read(fd, buffer, 100);
 	printf("%s\n", buffer);
-
+	close(fd);
 }
+
+
+
+
 
 void processInput(){
 
@@ -210,6 +213,9 @@ void processInput(){
 	}
 }
 
+
+
+
 int main() {
 
 	printf("Bem vinda/o ao i-banco-terminal.\n\n");
@@ -232,9 +238,9 @@ int main() {
 
 	processInput();
 	
+	close(i_banco_pipe);
 	unlink(pipe_name);
 	
-	close(i_banco_pipe);
 
 	return 0;
 }

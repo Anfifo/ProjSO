@@ -8,7 +8,7 @@
 
 
 int contasSaldos[NUM_CONTAS];
-int flag;
+extern int signal_flag;
 
 int contaExiste(int idConta) {
 	return (idConta > 0 && idConta <= NUM_CONTAS);
@@ -64,7 +64,7 @@ void simular(int numAnos) {
 
 	int ano;
 	int idConta;
-	flag = 0;
+	signal_flag = 0;
 
 
 	if (numAnos < 0)
@@ -93,7 +93,7 @@ void simular(int numAnos) {
 		
 		/* se um sinal tornar a flag a 1 o processo 
 		 * termina no final da simulacao do ano */ 
-		if (flag){
+		if (signal_flag){
 			printf("terminado por sinal\n");
 			exit(EXIT_SUCCESS);
 		}
