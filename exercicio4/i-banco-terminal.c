@@ -9,19 +9,21 @@ char pipe_name[20];
 
 
 void addToPipe(comando_t comando){
+	comando.pid = getpid();
+
 	if (write(i_banco_pipe, &comando, sizeof(comando_t)) == -1)
 		perror("Erro na escrita no i-banco-pipe.");
 
-/*
+
 	int fd = open(pipe_name,O_RDONLY);
 	if (fd < 0)
-		perror("Erro na escrita do pipe terminal.");
+		perror("Erro ao abrir o pipe de retorno.");
 
 
 	char buffer[100];
 	read(fd, buffer, 100);
 	printf("%s\n", buffer);
-*/
+
 }
 
 void processInput(){
@@ -216,16 +218,17 @@ int main() {
 	if (i_banco_pipe == -1)
 		perror("Erro a abrir o pipe.");
 
-	printf("- Connection to i-banco Successful -\n\n");
+	printf("- Connection Successful -\n\n");
+	
 	snprintf(pipe_name, 50, "%d", getpid());
 
 	unlink(pipe_name);
 
-	/*
-	int status = mkfifo(pipe_name, S_IWUSR);
+
+	int status = mkfifo(pipe_name, S_IRWXU);
 	if (status != 0)
 		perror("Erro a abrir o pipe terminal.");
-	*/
+
 
 	processInput();
 	

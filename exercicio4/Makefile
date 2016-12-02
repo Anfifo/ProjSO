@@ -26,4 +26,4 @@ run:
 	gnome-terminal -e ~/Documents/SO/ProjSO/exercicio4/i-banco; gnome-terminal -e ~/Documents/SO/ProjSO/exercicio4/i-banco-terminal
 
 clean:
-	rm -f *.o i-banco *.txt i-banco-pipe
+	rm -f *.o i-banco i-banco-terminal *.txt i-banco-pipe 1*
