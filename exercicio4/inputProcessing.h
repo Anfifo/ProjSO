@@ -52,6 +52,7 @@
 
 /* command structure */
 typedef struct {
+	int pid;
 	int operacao;
 	int idConta1;
 	int idConta2;
